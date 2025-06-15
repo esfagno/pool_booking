@@ -16,6 +16,5 @@
     <include file="/db/changelog/009_create_session.sql"/>
     <include file="/db/changelog/010_create_booking.sql"/>
     <include file="/db/changelog/011_create_booking.sql"/>
-    <include file="/db/changelog/012_user_subscription_trigger.sql"/>
-    <include file="/db/changelog/013_auto_decrement_booking.sql"/>
+
 </databaseChangeLog>
