@@ -18,7 +18,7 @@ import lombok.NoArgsConstructor;
 public class Subscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer  id;
     @ManyToOne
     @JoinColumn(name = "subscription_type_id")
     private SubscriptionType subscriptionType;

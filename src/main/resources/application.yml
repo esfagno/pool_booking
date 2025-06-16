@@ -1,9 +1,16 @@
+logging:
+  level:
+    org.hibernate.tool.hbm2ddl: debug
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/pool
     username: root
     password: 1029
     driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+
 
   liquibase:
     change-log: classpath:/db/db.changelog-master.xml

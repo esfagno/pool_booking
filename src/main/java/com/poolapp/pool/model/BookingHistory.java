@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class BookingHistory {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer  id;
     @ManyToOne
     @JoinColumn(name = "booking_id")
     private Booking booking;

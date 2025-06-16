@@ -16,11 +16,11 @@ import lombok.NoArgsConstructor;
 public class PoolSchedule {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer  id;
     @ManyToOne
     @JoinColumn(name = "pool_id")
     private Pool pool;
-    private int dayOfWeek;
+    private Short dayOfWeek;
     private LocalTime openingTime;
     private LocalTime closingTime;
 }
