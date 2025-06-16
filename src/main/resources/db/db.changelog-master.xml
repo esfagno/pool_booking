@@ -15,6 +15,6 @@
     <include file="/db/changelog/008_create_user_sub.sql"/>
     <include file="/db/changelog/009_create_session.sql"/>
     <include file="/db/changelog/010_create_booking.sql"/>
-    <include file="/db/changelog/011_create_booking.sql"/>
+    <include file="/db/changelog/011_create_booking_history.sql"/>
 
 </databaseChangeLog>
