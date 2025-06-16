@@ -1,6 +1,6 @@
 CREATE TABLE pool (
                       id SERIAL PRIMARY KEY,
-                      name VARCHAR(255) NOT NULL,
+                      name VARCHAR(255) NOT NULL UNIQUE,
                       address TEXT NOT NULL,
                       description TEXT,
                       max_capacity INTEGER NOT NULL CHECK (max_capacity > 0),
