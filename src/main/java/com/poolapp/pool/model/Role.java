@@ -25,5 +25,6 @@ public class Role implements Serializable {
     @Column(unique = true, nullable = false)
     private RoleType name;
 
+    @Column(nullable = true, columnDefinition = "TEXT")
     private String description;
 }

@@ -8,6 +8,8 @@ import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.annotation.LastModifiedDate;
 
 @Getter
 @Setter
@@ -18,12 +20,21 @@ import lombok.NoArgsConstructor;
 public class Subscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Integer  id;
+    private Integer id;
+
     @ManyToOne
-    @JoinColumn(name = "subscription_type_id")
+    @JoinColumn(name = "subscription_type_id", nullable = false)
     private SubscriptionType subscriptionType;
+
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private SubscriptionStatus status;
+
+    @CreatedDate
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
+
+    @LastModifiedDate
+    @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 }
