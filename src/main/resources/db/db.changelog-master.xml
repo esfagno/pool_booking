@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+        xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog
+    http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.8.xsd">
+
+    <include file="/db/changeset/001_create_enum.sql"/>
+    <include file="/db/changeset/002_create_role.sql"/>
+    <include file="/db/changeset/003_create_users.sql"/>
+    <include file="/db/changeset/004_create_pool.sql"/>
+    <include file="/db/changeset/005_create_pool_schedule.sql"/>
+    <include file="/db/changeset/006_create_subscription_type.sql"/>
+    <include file="/db/changeset/007_create_subscription.sql"/>
+    <include file="/db/changeset/008_create_user_sub.sql"/>
+    <include file="/db/changeset/009_create_session.sql"/>
+    <include file="/db/changeset/010_create_booking.sql"/>
+    <include file="/db/changeset/011_create_booking_history.sql"/>
+
+</databaseChangeLog>

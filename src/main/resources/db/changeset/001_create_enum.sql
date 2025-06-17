@@ -1,0 +1,4 @@
+CREATE TYPE subscription_status AS ENUM ('ACTIVE', 'EXPIRED', 'CANCELLED');
+CREATE TYPE booking_status AS ENUM ('ACTIVE', 'CANCELLED', 'COMPLETED');
+CREATE TYPE booking_action AS ENUM ('CREATE', 'UPDATE', 'CANCEL');
+CREATE TYPE role_type AS ENUM ('USER', 'ADMIN');
