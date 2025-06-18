@@ -1,10 +1,17 @@
 package com.poolapp.pool.model;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -34,12 +41,12 @@ public class Pool {
 
     @Column(nullable = false)
     @Min(1)
-    private int maxCapacity;
+    private Integer maxCapacity;
 
     @Column(nullable = false)
     @Min(10)
     @Max(480)
-    private int sessionDurationMinutes;
+    private Integer sessionDurationMinutes;
 
     @CreatedDate
     @Column(updatable = false)

@@ -1,13 +1,19 @@
 package com.poolapp.pool.model;
 
-import jakarta.persistence.*;
-import jakarta.validation.constraints.Min;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.AssertTrue;
-
+import jakarta.validation.constraints.Min;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
-
+import lombok.Setter;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 import org.springframework.data.annotation.CreatedDate;
@@ -42,7 +48,7 @@ public class Session {
 
     @Min(0)
     @Column(name = "current_capacity", nullable = false)
-    private int currentCapacity ;
+    private Integer currentCapacity;
 
     @CreatedDate
     @Column(name = "created_at", updatable = false)

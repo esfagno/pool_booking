@@ -1,14 +1,20 @@
 package com.poolapp.pool.model;
 
-import jakarta.persistence.*;
-
-import java.time.LocalDateTime;
-
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import jakarta.validation.constraints.Min;
 import lombok.Getter;
-import lombok.Setter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.annotation.CreatedDate;
+
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -30,7 +36,7 @@ public class UserSubscription {
 
     @Min(0)
     @Column(name = "remaining_bookings", nullable = false)
-    private int remainingBookings;
+    private Integer remainingBookings;
 
     @CreatedDate
     @Column(name = "assigned_at", updatable = false)
