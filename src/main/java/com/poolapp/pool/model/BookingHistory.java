@@ -2,6 +2,7 @@ package com.poolapp.pool.model;
 
 import com.poolapp.pool.model.enums.BookingAction;
 import jakarta.persistence.Column;
+import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
@@ -9,7 +10,9 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinColumns;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -31,7 +34,10 @@ public class BookingHistory {
     private Integer id;
 
     @ManyToOne
-    @JoinColumn(name = "booking_id")
+    @JoinColumns({
+            @JoinColumn(name = "booking_user_id", referencedColumnName = "user_id"),
+            @JoinColumn(name = "booking_session_id", referencedColumnName = "session_id")
+    })
     @OnDelete(action = OnDeleteAction.CASCADE)
     private Booking booking;
 
