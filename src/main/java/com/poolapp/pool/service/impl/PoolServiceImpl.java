@@ -1,11 +1,15 @@
 package com.poolapp.pool.service.impl;
 
+import com.poolapp.pool.exception.BadRequestException;
+import com.poolapp.pool.exception.ResourceNotFoundException;
 import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.PoolSchedule;
 import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.PoolScheduleRepository;
 import com.poolapp.pool.service.PoolService;
-import jakarta.persistence.EntityNotFoundException;
+import com.poolapp.pool.util.ErrorMessages;
+import com.poolapp.pool.util.PoolMapper;
+import com.poolapp.pool.util.PoolScheduleMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,10 +17,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class PoolServiceImpl implements PoolService {
 
     private final PoolRepository poolRepository;
@@ -30,33 +34,36 @@ public class PoolServiceImpl implements PoolService {
     @Override
     public Pool getPoolById(Integer id) {
         return poolRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Pool not found: id=" + id));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.POOL_NOT_FOUND + id));
     }
 
     @Override
-    public List<Pool> getAllPools() {
-        return poolRepository.findAll();
+    public List<Pool> getAllPools(String name) {
+
+        List<Pool> pools = poolRepository.findAll();
+
+        return pools.stream()
+                .filter(pool -> name == null || pool.getName().toLowerCase().contains(name.toLowerCase()))
+                .collect(Collectors.toList());
     }
 
+    @Transactional
     @Override
     public Pool updatePool(Integer id, Pool updatedPool) {
         Pool pool = getPoolById(id);
-        pool.setName(updatedPool.getName());
-        pool.setAddress(updatedPool.getAddress());
-        pool.setDescription(updatedPool.getDescription());
-        pool.setMaxCapacity(updatedPool.getMaxCapacity());
-        pool.setSessionDurationMinutes(updatedPool.getSessionDurationMinutes());
-        return poolRepository.save(pool);
+        Pool mergedPool = PoolMapper.updatePoolWith(pool, updatedPool);
+        return poolRepository.save(mergedPool);
     }
 
     @Override
     public void deletePool(Integer id) {
         if (!poolRepository.existsById(id)) {
-            throw new EntityNotFoundException("Pool not found: id=" + id);
+            throw new ResourceNotFoundException(ErrorMessages.POOL_NOT_FOUND + id);
         }
         poolRepository.deleteById(id);
     }
 
+    @Transactional
     @Override
     public Pool updateCapacity(Integer poolId, Integer newCapacity) {
         Pool pool = getPoolById(poolId);
@@ -64,6 +71,7 @@ public class PoolServiceImpl implements PoolService {
         return poolRepository.save(pool);
     }
 
+    @Transactional
     @Override
     public PoolSchedule createOrUpdateSchedule(Integer poolId, PoolSchedule schedule) {
         Pool pool = getPoolById(poolId);
@@ -71,21 +79,19 @@ public class PoolServiceImpl implements PoolService {
 
         return scheduleRepository.findByPoolIdAndDayOfWeek(poolId, schedule.getDayOfWeek())
                 .map(existing -> {
-                    existing.setOpeningTime(schedule.getOpeningTime());
-                    existing.setClosingTime(schedule.getClosingTime());
+                    PoolScheduleMapper.updateScheduleWith(existing, schedule);
                     return scheduleRepository.save(existing);
                 })
                 .orElseGet(() -> scheduleRepository.save(schedule));
     }
 
+    @Transactional
     @Override
     public PoolSchedule updateSchedule(Integer scheduleId, PoolSchedule updatedSchedule) {
         PoolSchedule existing = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new EntityNotFoundException("Schedule not found: id=" + scheduleId));
+                .orElseThrow(() -> new ResourceNotFoundException(ErrorMessages.SCHEDULE_NOT_FOUND + scheduleId));
 
-        existing.setOpeningTime(updatedSchedule.getOpeningTime());
-        existing.setClosingTime(updatedSchedule.getClosingTime());
-        existing.setDayOfWeek(updatedSchedule.getDayOfWeek());
+        PoolScheduleMapper.updateScheduleWith(existing, updatedSchedule);
 
         return scheduleRepository.save(existing);
     }
@@ -114,7 +120,7 @@ public class PoolServiceImpl implements PoolService {
     @Override
     public List<Pool> getPoolsByDayOfWeek(Short dayOfWeek) {
         if (dayOfWeek == null) {
-            throw new IllegalArgumentException("DayOfWeek cannot be null");
+            throw new BadRequestException(ErrorMessages.DAY_OF_WEEK_NULL);
         }
         return scheduleRepository.findPoolsByDayOfWeek(dayOfWeek);
     }

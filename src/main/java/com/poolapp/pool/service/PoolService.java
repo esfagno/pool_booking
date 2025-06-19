@@ -11,7 +11,7 @@ public interface PoolService {
 
     Pool getPoolById(Integer id);
 
-    List<Pool> getAllPools();
+    List<Pool> getAllPools(String name);
 
     Pool updatePool(Integer id, Pool updatedPool);
 
