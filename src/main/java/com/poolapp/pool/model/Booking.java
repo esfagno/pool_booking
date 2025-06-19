@@ -30,18 +30,6 @@ public class Booking {
     @EmbeddedId
     private BookingId id;
 
-    @ManyToOne
-    @MapsId("userId")
-    @JoinColumn(name = "user_id")
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private User user;
-
-    @ManyToOne
-    @MapsId("sessionId")
-    @JoinColumn(name = "session_id")
-    @OnDelete(action = OnDeleteAction.CASCADE)
-    private Session session;
-
     @Column(nullable = false, columnDefinition = "TIMESTAMP DEFAULT CURRENT_TIMESTAMP")
     private LocalDateTime bookingTime;
 
