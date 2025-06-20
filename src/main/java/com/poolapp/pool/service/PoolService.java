@@ -1,33 +1,31 @@
 package com.poolapp.pool.service;
 
+import com.poolapp.pool.dto.PoolDTO;
+import com.poolapp.pool.dto.PoolScheduleDTO;
 import com.poolapp.pool.model.Pool;
-import com.poolapp.pool.model.PoolSchedule;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 public interface PoolService {
-    Pool createPool(Pool pool);
+    PoolDTO createPool(PoolDTO pool);
 
     Pool getPoolById(Integer id);
 
-    List<Pool> getAllPools(String name);
+    List<PoolDTO> searchPools(String name, String address, String description, Integer maxCapacity, Integer sessionDuration);
 
-    Pool updatePool(Integer id, Pool updatedPool);
+    PoolDTO updatePool(Integer id, PoolDTO updatedPool);
 
     void deletePool(Integer id);
 
-    Pool updateCapacity(Integer poolId, Integer newCapacity);
+    PoolDTO updateCapacity(Integer poolId, Integer newCapacity);
 
-    PoolSchedule createOrUpdateSchedule(Integer poolId, PoolSchedule schedule);
+    PoolScheduleDTO createOrUpdateSchedule(Integer poolId, PoolScheduleDTO dto);
 
-    PoolSchedule updateSchedule(Integer scheduleId, PoolSchedule updatedSchedule);
+    PoolScheduleDTO updateSchedule(Integer scheduleId, PoolScheduleDTO dto);
 
     void deleteScheduleByDay(Integer poolId, Short dayOfWeek);
 
-    List<PoolSchedule> getSchedulesForPool(Integer poolId);
+    List<PoolScheduleDTO> getSchedulesForPool(Integer poolId);
 
-    boolean isPoolOpenAt(Integer poolId, LocalDateTime dateTime);
-
-    List<Pool> getPoolsByDayOfWeek(Short dayOfWeek);
+    List<PoolDTO> getPoolsByDayOfWeek(Short dayOfWeek);
 }

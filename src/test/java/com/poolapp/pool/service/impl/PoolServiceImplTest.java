@@ -1,6 +1,9 @@
 package com.poolapp.pool.service.impl;
 
+import com.poolapp.pool.dto.PoolDTO;
+import com.poolapp.pool.dto.PoolScheduleDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
+import com.poolapp.pool.mapper.PoolScheduleMapper;
 import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.PoolSchedule;
 import com.poolapp.pool.repository.PoolRepository;
@@ -11,15 +14,13 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
+import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -36,7 +37,9 @@ class PoolServiceImplTest {
     private PoolServiceImpl poolService;
 
     private Pool pool;
+    private PoolDTO poolDTO;
     private PoolSchedule schedule;
+    private PoolScheduleDTO scheduleDTO;
 
     @BeforeEach
     void setUp() {
@@ -47,20 +50,32 @@ class PoolServiceImplTest {
         pool.setName("Main Pool");
         pool.setMaxCapacity(20);
 
+        poolDTO = new PoolDTO();
+        poolDTO.setName("Main Pool");
+        poolDTO.setMaxCapacity(20);
+
         schedule = new PoolSchedule();
         schedule.setId(1);
         schedule.setPool(pool);
         schedule.setDayOfWeek((short) 1);
         schedule.setOpeningTime(LocalTime.of(8, 0));
         schedule.setClosingTime(LocalTime.of(20, 0));
+
+        scheduleDTO = new PoolScheduleDTO();
+        scheduleDTO.setDayOfWeek((short) 1);
+        scheduleDTO.setOpeningTime(LocalTime.of(8, 0));
+        scheduleDTO.setClosingTime(LocalTime.of(20, 0));
     }
 
     @Test
-    void test_createPool_shouldReturnSavedPool() {
-        when(poolRepository.save(pool)).thenReturn(pool);
-        Pool result = poolService.createPool(pool);
-        assertEquals(pool, result);
-        verify(poolRepository).save(pool);
+    void test_createPool_shouldReturnSavedPoolDTO() {
+        when(poolRepository.save(any())).thenReturn(pool);
+
+        PoolDTO result = poolService.createPool(poolDTO);
+
+        assertNotNull(result);
+        assertEquals(pool.getName(), result.getName());
+        verify(poolRepository).save(any());
     }
 
     @Test
@@ -77,34 +92,48 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void test_getAllPools_shouldFilterByName() {
-        Pool another = new Pool();
-        another.setId(2);
-        another.setName("Secondary Pool");
+    void test_searchPools_shouldFilterByName() {
+        when(poolRepository.findPoolByFilter("main", null, null, null, null))
+                .thenReturn(List.of(pool));
 
-        when(poolRepository.findByNameContainingNullable("main")).thenReturn(List.of(pool));
-        List<Pool> result = poolService.getAllPools("main");
+        List<PoolDTO> result = poolService.searchPools("main", null, null, null, null);
 
         assertEquals(1, result.size());
         assertEquals("Main Pool", result.get(0).getName());
     }
 
     @Test
-    void test_getAllPools_shouldReturnAllIfNoFilter() {
-        when(poolRepository.findByNameContainingNullable(null)).thenReturn(List.of(pool));
-        List<Pool> result = poolService.getAllPools(null);
+    void test_searchPools_shouldFilterByMultipleFields() {
+        when(poolRepository.findPoolByFilter("main", "Some Address", null, 20, 60))
+                .thenReturn(List.of(pool));
+
+        List<PoolDTO> result = poolService.searchPools("main", "Some Address", null, 20, 60);
+
         assertEquals(1, result.size());
+        assertEquals("Main Pool", result.get(0).getName());
     }
 
     @Test
+    void test_searchPools_shouldReturnAllIfNoFilter() {
+        when(poolRepository.findPoolByFilter(null, null, null, null, null))
+                .thenReturn(List.of(pool));
+
+        List<PoolDTO> result = poolService.searchPools(null, null, null, null, null);
+
+        assertEquals(1, result.size());
+        assertEquals("Main Pool", result.get(0).getName());
+    }
+
+
+    @Test
     void test_updatePool_shouldMergeAndSave() {
-        Pool updated = new Pool();
+        PoolDTO updated = new PoolDTO();
         updated.setName("Updated Pool");
 
         when(poolRepository.findById(1)).thenReturn(Optional.of(pool));
         when(poolRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Pool result = poolService.updatePool(1, updated);
+        PoolDTO result = poolService.updatePool(1, updated);
         assertEquals("Updated Pool", result.getName());
     }
 
@@ -126,18 +155,29 @@ class PoolServiceImplTest {
         when(poolRepository.findById(1)).thenReturn(Optional.of(pool));
         when(poolRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        Pool result = poolService.updateCapacity(1, 30);
+        PoolDTO result = poolService.updateCapacity(1, 30);
+        assertNotNull(result);
         assertEquals(30, result.getMaxCapacity());
+        verify(poolRepository).save(any());
     }
 
     @Test
     void test_createOrUpdateSchedule_shouldCreateNewIfNotExists() {
+        PoolScheduleDTO dto = new PoolScheduleDTO();
+        dto.setDayOfWeek((short) 1);
+        dto.setOpeningTime(LocalTime.of(8, 0));
+        dto.setClosingTime(LocalTime.of(20, 0));
+
+        PoolSchedule scheduleEntity = PoolScheduleMapper.toEntity(dto, pool);
+
         when(poolRepository.findById(1)).thenReturn(Optional.of(pool));
         when(scheduleRepository.findByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(Optional.empty());
-        when(scheduleRepository.save(schedule)).thenReturn(schedule);
+        when(scheduleRepository.save(any())).thenReturn(scheduleEntity);
 
-        PoolSchedule result = poolService.createOrUpdateSchedule(1, schedule);
-        assertEquals(schedule, result);
+        PoolScheduleDTO result = poolService.createOrUpdateSchedule(1, dto);
+        assertEquals(dto.getDayOfWeek(), result.getDayOfWeek());
+        assertEquals(dto.getOpeningTime(), result.getOpeningTime());
+        assertEquals(dto.getClosingTime(), result.getClosingTime());
     }
 
     @Test
@@ -149,36 +189,47 @@ class PoolServiceImplTest {
         existing.setOpeningTime(LocalTime.of(7, 0));
         existing.setClosingTime(LocalTime.of(21, 0));
 
+        PoolScheduleDTO dto = PoolScheduleMapper.toDto(schedule);
+
         when(poolRepository.findById(1)).thenReturn(Optional.of(pool));
         when(scheduleRepository.findByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(Optional.of(existing));
-        when(scheduleRepository.save(existing)).thenReturn(existing);
+        when(scheduleRepository.save(any())).thenReturn(schedule);
 
-        PoolSchedule result = poolService.createOrUpdateSchedule(1, schedule);
-        assertEquals(existing, result);
+        PoolScheduleDTO result = poolService.createOrUpdateSchedule(1, dto);
+        assertEquals(dto.getDayOfWeek(), result.getDayOfWeek());
     }
 
     @Test
     void test_updateSchedule_shouldUpdateIfExists() {
-        PoolSchedule updated = new PoolSchedule();
-        updated.setOpeningTime(LocalTime.of(9, 0));
-        updated.setClosingTime(LocalTime.of(18, 0));
+        PoolScheduleDTO updatedDto = new PoolScheduleDTO();
+        updatedDto.setOpeningTime(LocalTime.of(9, 0));
+        updatedDto.setClosingTime(LocalTime.of(18, 0));
+        updatedDto.setDayOfWeek(schedule.getDayOfWeek());
 
         when(scheduleRepository.findById(1)).thenReturn(Optional.of(schedule));
         when(scheduleRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        PoolSchedule result = poolService.updateSchedule(1, updated);
+        PoolScheduleDTO result = poolService.updateSchedule(1, updatedDto);
         assertEquals(LocalTime.of(9, 0), result.getOpeningTime());
         assertEquals(LocalTime.of(18, 0), result.getClosingTime());
     }
 
     @Test
     void test_updateSchedule_shouldThrowIfNotFound() {
+        PoolScheduleDTO dto = new PoolScheduleDTO();
+        dto.setDayOfWeek((short) 1);
+        dto.setOpeningTime(LocalTime.of(9, 0));
+        dto.setClosingTime(LocalTime.of(18, 0));
+
         when(scheduleRepository.findById(1)).thenReturn(Optional.empty());
-        assertThrows(ModelNotFoundException.class, () -> poolService.updateSchedule(1, schedule));
+
+        assertThrows(ModelNotFoundException.class, () -> poolService.updateSchedule(1, dto));
     }
 
     @Test
     void test_deleteScheduleByDay_shouldDeleteByDayOfWeek() {
+        when(scheduleRepository.existsByPoolIdAndDayOfWeek(1, (short) 1))
+                .thenReturn(true);
         poolService.deleteScheduleByDay(1, (short) 1);
         verify(scheduleRepository).deleteByPoolIdAndDayOfWeek(1, (short) 1);
     }
@@ -186,38 +237,39 @@ class PoolServiceImplTest {
     @Test
     void test_getSchedulesForPool_shouldReturnList() {
         when(scheduleRepository.findByPoolId(1)).thenReturn(List.of(schedule));
-        List<PoolSchedule> result = poolService.getSchedulesForPool(1);
+        List<PoolScheduleDTO> result = poolService.getSchedulesForPool(1);
         assertEquals(1, result.size());
-    }
-
-    @Test
-    void test_isPoolOpenAt_shouldReturnTrueIfOpen() {
-        LocalDateTime dt = LocalDateTime.of(2025, 6, 23, 10, 0);
-        when(scheduleRepository.findByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(Optional.of(schedule));
-        boolean result = poolService.isPoolOpenAt(1, dt);
-        assertTrue(result);
-    }
-
-    @Test
-    void test_isPoolOpenAt_shouldReturnFalseIfClosed() {
-        LocalDateTime dt = LocalDateTime.of(2025, 6, 23, 22, 0);
-        when(scheduleRepository.findByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(Optional.of(schedule));
-        boolean result = poolService.isPoolOpenAt(1, dt);
-        assertFalse(result);
-    }
-
-    @Test
-    void test_isPoolOpenAt_shouldReturnFalseIfNoSchedule() {
-        LocalDateTime dt = LocalDateTime.of(2025, 6, 23, 10, 0);
-        when(scheduleRepository.findByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(Optional.empty());
-        boolean result = poolService.isPoolOpenAt(1, dt);
-        assertFalse(result);
+        assertEquals(schedule.getOpeningTime(), result.get(0).getOpeningTime());
     }
 
     @Test
     void test_getPoolsByDayOfWeek_shouldReturnPools() {
         when(scheduleRepository.findPoolsByDayOfWeek((short) 1)).thenReturn(List.of(pool));
-        List<Pool> result = poolService.getPoolsByDayOfWeek((short) 1);
+        List<PoolDTO> result = poolService.getPoolsByDayOfWeek((short) 1);
         assertEquals(1, result.size());
+        assertEquals(pool.getName(), result.get(0).getName());
     }
+
+    @Test
+    void test_deleteScheduleByDay_shouldThrowIfNotExists() {
+        when(scheduleRepository.existsByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(false);
+        assertThrows(ModelNotFoundException.class,
+                () -> poolService.deleteScheduleByDay(1, (short) 1));
+    }
+
+    @Test
+    void test_createOrUpdateSchedule_shouldThrowIfPoolNotFound() {
+        when(poolRepository.findById(1)).thenReturn(Optional.empty());
+        assertThrows(ModelNotFoundException.class,
+                () -> poolService.createOrUpdateSchedule(1, scheduleDTO));
+    }
+
+    @Test
+    void test_updatePool_shouldThrowIfNotFound() {
+        when(poolRepository.findById(1)).thenReturn(Optional.empty());
+        assertThrows(ModelNotFoundException.class,
+                () -> poolService.updatePool(1, poolDTO));
+    }
+
+
 }

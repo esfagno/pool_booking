@@ -20,4 +20,7 @@ public interface PoolScheduleRepository extends JpaRepository<PoolSchedule, Inte
     List<Pool> findPoolsByDayOfWeek(@Param("dayOfWeek") Short dayOfWeek);
 
     void deleteByPoolIdAndDayOfWeek(Integer poolId, Short dayOfWeek);
+
+    boolean existsByPoolIdAndDayOfWeek(Integer poolId, Short dayOfWeek);
 }
+
