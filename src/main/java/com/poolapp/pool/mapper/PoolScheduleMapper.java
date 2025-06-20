@@ -1,4 +1,4 @@
-package com.poolapp.pool.util;
+package com.poolapp.pool.mapper;
 
 import com.poolapp.pool.model.PoolSchedule;
 

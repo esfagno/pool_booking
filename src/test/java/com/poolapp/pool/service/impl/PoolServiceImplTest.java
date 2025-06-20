@@ -1,7 +1,6 @@
 package com.poolapp.pool.service.impl;
 
-import com.poolapp.pool.exception.BadRequestException;
-import com.poolapp.pool.exception.ResourceNotFoundException;
+import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.PoolSchedule;
 import com.poolapp.pool.repository.PoolRepository;
@@ -57,7 +56,7 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testCreatePool() {
+    void test_createPool_shouldReturnSavedPool() {
         when(poolRepository.save(pool)).thenReturn(pool);
         Pool result = poolService.createPool(pool);
         assertEquals(pool, result);
@@ -65,25 +64,25 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testGetPoolByIdFound() {
+    void test_getPoolById_shouldReturnPoolIfFound() {
         when(poolRepository.findById(1)).thenReturn(Optional.of(pool));
         Pool result = poolService.getPoolById(1);
         assertEquals(pool, result);
     }
 
     @Test
-    void testGetPoolByIdNotFound() {
+    void test_getPoolById_shouldThrowIfNotFound() {
         when(poolRepository.findById(1)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> poolService.getPoolById(1));
+        assertThrows(ModelNotFoundException.class, () -> poolService.getPoolById(1));
     }
 
     @Test
-    void testGetAllPools_FilterByName() {
+    void test_getAllPools_shouldFilterByName() {
         Pool another = new Pool();
         another.setId(2);
         another.setName("Secondary Pool");
 
-        when(poolRepository.findAll()).thenReturn(List.of(pool, another));
+        when(poolRepository.findByNameContainingNullable("main")).thenReturn(List.of(pool));
         List<Pool> result = poolService.getAllPools("main");
 
         assertEquals(1, result.size());
@@ -91,14 +90,14 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testGetAllPools_NoFilter() {
-        when(poolRepository.findAll()).thenReturn(List.of(pool));
+    void test_getAllPools_shouldReturnAllIfNoFilter() {
+        when(poolRepository.findByNameContainingNullable(null)).thenReturn(List.of(pool));
         List<Pool> result = poolService.getAllPools(null);
         assertEquals(1, result.size());
     }
 
     @Test
-    void testUpdatePool() {
+    void test_updatePool_shouldMergeAndSave() {
         Pool updated = new Pool();
         updated.setName("Updated Pool");
 
@@ -110,20 +109,20 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testDeletePool_Success() {
+    void test_deletePool_shouldDeleteIfExists() {
         when(poolRepository.existsById(1)).thenReturn(true);
         poolService.deletePool(1);
         verify(poolRepository).deleteById(1);
     }
 
     @Test
-    void testDeletePool_NotFound() {
+    void test_deletePool_shouldThrowIfNotExists() {
         when(poolRepository.existsById(1)).thenReturn(false);
-        assertThrows(ResourceNotFoundException.class, () -> poolService.deletePool(1));
+        assertThrows(ModelNotFoundException.class, () -> poolService.deletePool(1));
     }
 
     @Test
-    void testUpdateCapacity() {
+    void test_updateCapacity_shouldSetAndSaveNewCapacity() {
         when(poolRepository.findById(1)).thenReturn(Optional.of(pool));
         when(poolRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -132,7 +131,7 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testCreateOrUpdateSchedule_CreateNew() {
+    void test_createOrUpdateSchedule_shouldCreateNewIfNotExists() {
         when(poolRepository.findById(1)).thenReturn(Optional.of(pool));
         when(scheduleRepository.findByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(Optional.empty());
         when(scheduleRepository.save(schedule)).thenReturn(schedule);
@@ -142,7 +141,7 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testCreateOrUpdateSchedule_UpdateExisting() {
+    void test_createOrUpdateSchedule_shouldUpdateIfExists() {
         PoolSchedule existing = new PoolSchedule();
         existing.setId(2);
         existing.setPool(pool);
@@ -159,7 +158,7 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testUpdateSchedule_Success() {
+    void test_updateSchedule_shouldUpdateIfExists() {
         PoolSchedule updated = new PoolSchedule();
         updated.setOpeningTime(LocalTime.of(9, 0));
         updated.setClosingTime(LocalTime.of(18, 0));
@@ -173,26 +172,26 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testUpdateSchedule_NotFound() {
+    void test_updateSchedule_shouldThrowIfNotFound() {
         when(scheduleRepository.findById(1)).thenReturn(Optional.empty());
-        assertThrows(ResourceNotFoundException.class, () -> poolService.updateSchedule(1, schedule));
+        assertThrows(ModelNotFoundException.class, () -> poolService.updateSchedule(1, schedule));
     }
 
     @Test
-    void testDeleteScheduleByDay() {
+    void test_deleteScheduleByDay_shouldDeleteByDayOfWeek() {
         poolService.deleteScheduleByDay(1, (short) 1);
         verify(scheduleRepository).deleteByPoolIdAndDayOfWeek(1, (short) 1);
     }
 
     @Test
-    void testGetSchedulesForPool() {
+    void test_getSchedulesForPool_shouldReturnList() {
         when(scheduleRepository.findByPoolId(1)).thenReturn(List.of(schedule));
         List<PoolSchedule> result = poolService.getSchedulesForPool(1);
         assertEquals(1, result.size());
     }
 
     @Test
-    void testIsPoolOpenAt_Open() {
+    void test_isPoolOpenAt_shouldReturnTrueIfOpen() {
         LocalDateTime dt = LocalDateTime.of(2025, 6, 23, 10, 0);
         when(scheduleRepository.findByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(Optional.of(schedule));
         boolean result = poolService.isPoolOpenAt(1, dt);
@@ -200,7 +199,7 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testIsPoolOpenAt_Closed() {
+    void test_isPoolOpenAt_shouldReturnFalseIfClosed() {
         LocalDateTime dt = LocalDateTime.of(2025, 6, 23, 22, 0);
         when(scheduleRepository.findByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(Optional.of(schedule));
         boolean result = poolService.isPoolOpenAt(1, dt);
@@ -208,7 +207,7 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testIsPoolOpenAt_NoSchedule() {
+    void test_isPoolOpenAt_shouldReturnFalseIfNoSchedule() {
         LocalDateTime dt = LocalDateTime.of(2025, 6, 23, 10, 0);
         when(scheduleRepository.findByPoolIdAndDayOfWeek(1, (short) 1)).thenReturn(Optional.empty());
         boolean result = poolService.isPoolOpenAt(1, dt);
@@ -216,14 +215,9 @@ class PoolServiceImplTest {
     }
 
     @Test
-    void testGetPoolsByDayOfWeek_Success() {
+    void test_getPoolsByDayOfWeek_shouldReturnPools() {
         when(scheduleRepository.findPoolsByDayOfWeek((short) 1)).thenReturn(List.of(pool));
         List<Pool> result = poolService.getPoolsByDayOfWeek((short) 1);
         assertEquals(1, result.size());
-    }
-
-    @Test
-    void testGetPoolsByDayOfWeek_Null() {
-        assertThrows(BadRequestException.class, () -> poolService.getPoolsByDayOfWeek(null));
     }
 }
