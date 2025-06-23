@@ -1,20 +1,18 @@
 package com.poolapp.pool.repository.base.criteria.impl;
 
 import com.poolapp.pool.model.Pool;
-import com.poolapp.pool.repository.base.criteria.PoolCriteriaRepository;
+import com.poolapp.pool.repository.base.criteria.PoolCriteria;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
 import jakarta.persistence.criteria.Predicate;
 import jakarta.persistence.criteria.Root;
-import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
 
-@Repository
-public class PoolCriteriaRepositoryImpl implements PoolCriteriaRepository {
+public class PoolCriteriaImpl implements PoolCriteria {
 
     @PersistenceContext
     private EntityManager entityManager;

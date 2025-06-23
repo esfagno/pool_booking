@@ -1,13 +1,13 @@
 package com.poolapp.pool.repository;
 
 import com.poolapp.pool.model.Pool;
-import com.poolapp.pool.repository.base.criteria.PoolCriteriaRepository;
+import com.poolapp.pool.repository.base.criteria.PoolCriteria;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 import java.util.Optional;
 
-public interface PoolRepository extends JpaRepository<Pool, Integer>, PoolCriteriaRepository {
+public interface PoolRepository extends JpaRepository<Pool, Integer>, PoolCriteria {
 
     Optional<Pool> findByName(String name);
 

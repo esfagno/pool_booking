@@ -9,9 +9,14 @@ import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true))
+import java.util.List;
+
+@Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true), unmappedTargetPolicy = ReportingPolicy.IGNORE,
+        nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS)
 public interface PoolScheduleMapper {
 
     @Mapping(source = "pool.name", target = "poolName")
@@ -19,6 +24,7 @@ public interface PoolScheduleMapper {
 
     PoolSchedule toEntity(PoolScheduleDTO dto, @Context Pool contextPool);
 
+    List<PoolScheduleDTO> toDtoList(List<PoolSchedule> schedules);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "pool", ignore = true)

@@ -55,7 +55,7 @@ public class PoolServiceImpl implements PoolService {
                 filterDto.getDescription(),
                 filterDto.getMaxCapacity(),
                 filterDto.getSessionDurationMinutes());
-        return pools.stream().map(poolMapper::toDto).toList();
+        return poolMapper.toDtoList(pools);
     }
 
     @Transactional
@@ -89,10 +89,11 @@ public class PoolServiceImpl implements PoolService {
         Pool pool = getPoolByName(dto.getPoolName());
         PoolSchedule schedule = poolScheduleMapper.toEntity(dto, pool);
 
-        PoolSchedule saved = scheduleRepository.findByPoolNameAndDayOfWeek(pool.getName(), dto.getDayOfWeek()).map(existing -> {
-            poolScheduleMapper.updateScheduleWith(existing, schedule);
-            return scheduleRepository.save(existing);
-        }).orElseGet(() -> scheduleRepository.save(schedule));
+        PoolSchedule saved = scheduleRepository.findByPoolNameAndDayOfWeek(pool.getName(), dto.getDayOfWeek())
+                .map(existing -> {
+                    poolScheduleMapper.updateScheduleWith(existing, schedule);
+                    return scheduleRepository.save(existing);
+                }).orElseGet(() -> scheduleRepository.save(schedule));
 
         return poolScheduleMapper.toDto(saved);
     }
@@ -114,7 +115,8 @@ public class PoolServiceImpl implements PoolService {
     public void deleteScheduleByDay(PoolDTO poolDTO, Short dayOfWeek) {
         Pool pool = getPoolByName(poolDTO.getName());
         if (!scheduleRepository.existsByPoolIdAndDayOfWeek(pool.getId(), dayOfWeek)) {
-            throw new ModelNotFoundException(ErrorMessages.SCHEDULE_NOT_FOUND + " for poolId=" + pool.getId() + " and dayOfWeek=" + dayOfWeek);
+            throw new ModelNotFoundException(
+                    String.format("%s for poolId=%d and dayOfWeek=%d", ErrorMessages.SCHEDULE_NOT_FOUND, pool.getId(), dayOfWeek));
         }
         scheduleRepository.deleteByPoolIdAndDayOfWeek(pool.getId(), dayOfWeek);
     }
