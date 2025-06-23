@@ -31,6 +31,12 @@ public class PoolServiceImpl implements PoolService {
                 .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + dto.getName()));
     }
 
+    @Override
+    public Pool getPoolByName(String name) {
+        return poolRepository.findByName(name)
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + name));
+    }
+
     @Transactional
     @Override
     public PoolDTO createPool(PoolDTO dto) {
@@ -40,16 +46,15 @@ public class PoolServiceImpl implements PoolService {
 
     }
 
-    @Override
-    public Pool getPoolByName(String name) {
-        return poolRepository.findByName(name)
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + name));
-    }
 
     @Override
-    public List<PoolDTO> searchPools(String name, String address, String description, Integer maxCapacity, Integer sessionDuration) {
+    public List<PoolDTO> searchPools(PoolDTO filterDto) {
 
-        List<Pool> pools = poolRepository.findPoolByFilter(name, address, description, maxCapacity, sessionDuration);
+        List<Pool> pools = poolRepository.findPoolByFilter(filterDto.getName(),
+                filterDto.getAddress(),
+                filterDto.getDescription(),
+                filterDto.getMaxCapacity(),
+                filterDto.getSessionDurationMinutes());
         return pools.stream().map(poolMapper::toDto).toList();
     }
 

@@ -11,7 +11,7 @@ public interface PoolService {
 
     Pool getPoolByName(String name);
 
-    List<PoolDTO> searchPools(String name, String address, String description, Integer maxCapacity, Integer sessionDuration);
+    List<PoolDTO> searchPools(PoolDTO pool);
 
     PoolDTO updatePool(String poolName, PoolDTO updatedPool);
 

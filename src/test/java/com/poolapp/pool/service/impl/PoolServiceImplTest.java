@@ -101,10 +101,13 @@ class PoolServiceImplTest {
 
     @Test
     void test_searchPools_shouldFilterByName() {
+        PoolDTO filterDto = PoolDTO.builder()
+                .name("main")
+                .build();
         when(poolRepository.findPoolByFilter("main", null, null, null, null))
                 .thenReturn(List.of(pool));
 
-        List<PoolDTO> result = poolService.searchPools("main", null, null, null, null);
+        List<PoolDTO> result = poolService.searchPools(filterDto);
 
         assertEquals(1, result.size());
         assertEquals("Main Pool", result.get(0).getName());
@@ -112,10 +115,16 @@ class PoolServiceImplTest {
 
     @Test
     void test_searchPools_shouldFilterByMultipleFields() {
+        PoolDTO filterDto = PoolDTO.builder()
+                .name("main")
+                .address("Some Address")
+                .maxCapacity(20)
+                .sessionDurationMinutes(60)
+                .build();
         when(poolRepository.findPoolByFilter("main", "Some Address", null, 20, 60))
                 .thenReturn(List.of(pool));
 
-        List<PoolDTO> result = poolService.searchPools("main", "Some Address", null, 20, 60);
+        List<PoolDTO> result = poolService.searchPools(filterDto);
 
         assertEquals(1, result.size());
         assertEquals("Main Pool", result.get(0).getName());
@@ -123,10 +132,11 @@ class PoolServiceImplTest {
 
     @Test
     void test_searchPools_shouldReturnAllIfNoFilter() {
+        PoolDTO filterDto = PoolDTO.builder().build();
         when(poolRepository.findPoolByFilter(null, null, null, null, null))
                 .thenReturn(List.of(pool));
 
-        List<PoolDTO> result = poolService.searchPools(null, null, null, null, null);
+        List<PoolDTO> result = poolService.searchPools(filterDto);
 
         assertEquals(1, result.size());
         assertEquals("Main Pool", result.get(0).getName());
