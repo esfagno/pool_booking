@@ -5,6 +5,7 @@ import com.poolapp.pool.model.Pool;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Builder;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 
@@ -14,6 +15,7 @@ import java.util.List;
 public interface PoolMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true)
     void updatePoolFromDto(@MappingTarget Pool pool, PoolDTO dto);
 
     Pool toEntity(PoolDTO dto);

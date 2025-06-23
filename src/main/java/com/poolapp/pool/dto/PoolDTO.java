@@ -15,8 +15,6 @@ import lombok.NoArgsConstructor;
 @Builder
 public class PoolDTO {
 
-    private Integer id;
-
     @NotBlank
     private String name;
 
