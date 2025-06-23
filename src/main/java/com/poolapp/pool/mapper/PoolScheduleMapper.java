@@ -3,34 +3,24 @@ package com.poolapp.pool.mapper;
 import com.poolapp.pool.dto.PoolScheduleDTO;
 import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.PoolSchedule;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Builder;
+import org.mapstruct.Context;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-public class PoolScheduleMapper {
+@Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true))
+public interface PoolScheduleMapper {
 
-    public static PoolScheduleDTO toDto(PoolSchedule entity) {
-        return PoolScheduleDTO.builder()
-                .id(entity.getId())
-                .poolId(entity.getPool().getId())
-                .dayOfWeek(entity.getDayOfWeek())
-                .openingTime(entity.getOpeningTime())
-                .closingTime(entity.getClosingTime())
-                .build();
-    }
+    @Mapping(source = "pool.name", target = "poolName")
+    PoolScheduleDTO toDto(PoolSchedule entity);
 
-    public static PoolSchedule toEntity(PoolScheduleDTO dto, Pool pool) {
-        PoolSchedule schedule = new PoolSchedule();
-        schedule.setId(dto.getId());
-        schedule.setPool(pool);
-        schedule.setDayOfWeek(dto.getDayOfWeek());
-        schedule.setOpeningTime(dto.getOpeningTime());
-        schedule.setClosingTime(dto.getClosingTime());
-        return schedule;
-    }
+    PoolSchedule toEntity(PoolScheduleDTO dto, @Context Pool contextPool);
 
-    public static PoolSchedule updateScheduleWith(PoolSchedule existing, PoolSchedule updated) {
-        existing.setOpeningTime(updated.getOpeningTime());
-        existing.setClosingTime(updated.getClosingTime());
-        existing.setDayOfWeek(updated.getDayOfWeek());
 
-        return existing;
-    }
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "pool", ignore = true)
+    PoolSchedule updateScheduleWith(@MappingTarget PoolSchedule existing, PoolSchedule updated);
 }

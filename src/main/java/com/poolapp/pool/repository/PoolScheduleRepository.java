@@ -10,9 +10,11 @@ import java.util.List;
 import java.util.Optional;
 
 public interface PoolScheduleRepository extends JpaRepository<PoolSchedule, Integer> {
-    Optional<PoolSchedule> findByPoolIdAndDayOfWeek(Integer poolId, Short dayOfWeek);
+    Optional<PoolSchedule> findByPoolNameAndDayOfWeek(String poolName, Short dayOfWeek);
 
     List<PoolSchedule> findAllByDayOfWeek(Short dayOfWeek);
+
+    List<PoolSchedule> findByPoolName(String poolName);
 
     List<PoolSchedule> findByPoolId(Integer poolId);
 

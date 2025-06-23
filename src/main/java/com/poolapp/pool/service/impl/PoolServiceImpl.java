@@ -23,115 +23,110 @@ public class PoolServiceImpl implements PoolService {
 
     private final PoolRepository poolRepository;
     private final PoolScheduleRepository scheduleRepository;
+    private final PoolMapper poolMapper;
+    private final PoolScheduleMapper poolScheduleMapper;
+
+    private Pool getPoolByDto(PoolDTO dto) {
+        return poolRepository.findByName(dto.getName())
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + dto.getName()));
+    }
 
     @Transactional
     @Override
     public PoolDTO createPool(PoolDTO dto) {
-        Pool pool = PoolMapper.toEntity(dto);
+        Pool pool = poolMapper.toEntity(dto);
         Pool saved = poolRepository.save(pool);
-        return PoolMapper.toDto(saved);
+        return poolMapper.toDto(saved);
 
     }
 
     @Override
-    public Pool getPoolById(Integer id) {
-        return poolRepository.findById(id)
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + id));
+    public Pool getPoolByName(String name) {
+        return poolRepository.findByName(name)
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + name));
     }
 
     @Override
     public List<PoolDTO> searchPools(String name, String address, String description, Integer maxCapacity, Integer sessionDuration) {
 
         List<Pool> pools = poolRepository.findPoolByFilter(name, address, description, maxCapacity, sessionDuration);
-        return pools.stream()
-                .map(PoolMapper::toDto)
-                .toList();
+        return pools.stream().map(poolMapper::toDto).toList();
     }
 
     @Transactional
     @Override
-    public PoolDTO updatePool(Integer id, PoolDTO updatedPool) {
-        Pool pool = getPoolById(id);
-        PoolMapper.updatePoolFromDto(pool, updatedPool);
+    public PoolDTO updatePool(String oldName, PoolDTO updatedPool) {
+        Pool pool = getPoolByName(oldName);
+        poolMapper.updatePoolFromDto(pool, updatedPool);
         Pool saved = poolRepository.save(pool);
-        return PoolMapper.toDto(saved);
+        return poolMapper.toDto(saved);
     }
 
     @Transactional
     @Override
-    public void deletePool(Integer id) {
-        if (!poolRepository.existsById(id)) {
-            throw new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + id);
-        }
-        poolRepository.deleteById(id);
+    public void deletePool(PoolDTO dto) {
+        Pool pool = getPoolByDto(dto);
+        poolRepository.deleteById(pool.getId());
     }
 
     @Transactional
     @Override
-    public PoolDTO updateCapacity(Integer poolId, Integer newCapacity) {
-        Pool pool = poolRepository.findById(poolId)
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + poolId));
-        pool.setMaxCapacity(newCapacity);
+    public PoolDTO updateCapacity(PoolDTO dto) {
+        Pool pool = getPoolByDto(dto);
+        pool.setMaxCapacity(dto.getMaxCapacity());
         Pool saved = poolRepository.save(pool);
-        return PoolMapper.toDto(saved);
+        return poolMapper.toDto(saved);
     }
 
     @Transactional
     @Override
-    public PoolScheduleDTO createOrUpdateSchedule(Integer poolId, PoolScheduleDTO dto) {
-        Pool pool = getPoolById(poolId);
-        PoolSchedule schedule = PoolScheduleMapper.toEntity(dto, pool);
+    public PoolScheduleDTO createOrUpdateSchedule(PoolScheduleDTO dto) {
+        Pool pool = getPoolByName(dto.getPoolName());
+        PoolSchedule schedule = poolScheduleMapper.toEntity(dto, pool);
 
-        PoolSchedule saved = scheduleRepository.findByPoolIdAndDayOfWeek(poolId, dto.getDayOfWeek())
-                .map(existing -> {
-                    PoolScheduleMapper.updateScheduleWith(existing, schedule);
-                    return scheduleRepository.save(existing);
-                })
-                .orElseGet(() -> scheduleRepository.save(schedule));
+        PoolSchedule saved = scheduleRepository.findByPoolNameAndDayOfWeek(pool.getName(), dto.getDayOfWeek()).map(existing -> {
+            poolScheduleMapper.updateScheduleWith(existing, schedule);
+            return scheduleRepository.save(existing);
+        }).orElseGet(() -> scheduleRepository.save(schedule));
 
-        return PoolScheduleMapper.toDto(saved);
+        return poolScheduleMapper.toDto(saved);
     }
 
     @Transactional
     @Override
-    public PoolScheduleDTO updateSchedule(Integer scheduleId, PoolScheduleDTO dto) {
-        PoolSchedule existing = scheduleRepository.findById(scheduleId)
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.SCHEDULE_NOT_FOUND + scheduleId));
+    public PoolScheduleDTO updateSchedule(PoolScheduleDTO dto) {
+        PoolSchedule existing = scheduleRepository.findByPoolNameAndDayOfWeek(dto.getPoolName(), dto.getDayOfWeek())
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.SCHEDULE_NOT_FOUND + dto.getPoolName()));
 
-        PoolSchedule incoming = PoolScheduleMapper.toEntity(dto, existing.getPool());
-        PoolScheduleMapper.updateScheduleWith(existing, incoming);
+        PoolSchedule incoming = poolScheduleMapper.toEntity(dto, existing.getPool());
+        poolScheduleMapper.updateScheduleWith(existing, incoming);
 
         PoolSchedule saved = scheduleRepository.save(existing);
-        return PoolScheduleMapper.toDto(saved);
+        return poolScheduleMapper.toDto(saved);
     }
 
     @Override
-    public void deleteScheduleByDay(Integer poolId, Short dayOfWeek) {
-        if (!scheduleRepository.existsByPoolIdAndDayOfWeek(poolId, dayOfWeek)) {
-            throw new ModelNotFoundException(
-                    ErrorMessages.SCHEDULE_NOT_FOUND
-                            + " for poolId=" + poolId + " and dayOfWeek=" + dayOfWeek
-            );
+    public void deleteScheduleByDay(PoolDTO poolDTO, Short dayOfWeek) {
+        Pool pool = getPoolByName(poolDTO.getName());
+        if (!scheduleRepository.existsByPoolIdAndDayOfWeek(pool.getId(), dayOfWeek)) {
+            throw new ModelNotFoundException(ErrorMessages.SCHEDULE_NOT_FOUND + " for poolId=" + pool.getId() + " and dayOfWeek=" + dayOfWeek);
         }
-        scheduleRepository.deleteByPoolIdAndDayOfWeek(poolId, dayOfWeek);
+        scheduleRepository.deleteByPoolIdAndDayOfWeek(pool.getId(), dayOfWeek);
     }
 
     @Override
-    public List<PoolScheduleDTO> getSchedulesForPool(Integer poolId) {
+    public List<PoolScheduleDTO> getSchedulesForPool(PoolDTO dto) {
 
-        List<PoolSchedule> schedules = scheduleRepository.findByPoolId(poolId);
-        return schedules.stream()
-                .map(PoolScheduleMapper::toDto)
-                .toList();
+        Pool pool = getPoolByName(dto.getName());
+        List<PoolSchedule> schedules = scheduleRepository.findByPoolId(pool.getId());
+        return schedules.stream().map(poolScheduleMapper::toDto).toList();
     }
 
 
     @Override
     public List<PoolDTO> getPoolsByDayOfWeek(Short dayOfWeek) {
         List<Pool> pools = scheduleRepository.findPoolsByDayOfWeek(dayOfWeek);
-        return pools.stream()
-                .map(PoolMapper::toDto)
-                .toList();
+        return pools.stream().map(poolMapper::toDto).toList();
     }
 
 }

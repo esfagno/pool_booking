@@ -17,9 +17,7 @@ import java.time.LocalTime;
 @Builder
 public class PoolScheduleDTO {
 
-    private Integer id;
-
-    private Integer poolId;
+    private String poolName;
 
     @NotNull
     @Min(1)

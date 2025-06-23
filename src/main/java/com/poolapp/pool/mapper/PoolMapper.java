@@ -2,60 +2,26 @@ package com.poolapp.pool.mapper;
 
 import com.poolapp.pool.dto.PoolDTO;
 import com.poolapp.pool.model.Pool;
+import org.mapstruct.BeanMapping;
+import org.mapstruct.Builder;
+import org.mapstruct.Mapper;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
-public class PoolMapper {
+import java.util.List;
 
-    public static void updatePoolFromDto(Pool pool, PoolDTO dto) {
-        if (dto.getName() != null) {
-            pool.setName(dto.getName());
-        }
-        if (dto.getAddress() != null) {
-            pool.setAddress(dto.getAddress());
-        }
-        if (dto.getDescription() != null) {
-            pool.setDescription(dto.getDescription());
-        }
-        if (dto.getMaxCapacity() != null) {
-            pool.setMaxCapacity(dto.getMaxCapacity());
-        }
-        if (dto.getSessionDurationMinutes() != null) {
-            pool.setSessionDurationMinutes(dto.getSessionDurationMinutes());
-        }
-    }
+@Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true))
+public interface PoolMapper {
 
-    public static Pool toEntity(PoolDTO dto) {
-        return Pool.builder()
-                .name(dto.getName())
-                .address(dto.getAddress())
-                .description(dto.getDescription())
-                .maxCapacity(dto.getMaxCapacity())
-                .sessionDurationMinutes(dto.getSessionDurationMinutes())
-                .build();
-    }
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updatePoolFromDto(@MappingTarget Pool pool, PoolDTO dto);
 
-    public static Pool updatePoolWith(Pool existingPool, Pool updatedPool) {
-        return existingPool.toBuilder()
-                .name(updatedPool.getName())
-                .address(updatedPool.getAddress())
-                .description(updatedPool.getDescription())
-                .maxCapacity(updatedPool.getMaxCapacity())
-                .sessionDurationMinutes(updatedPool.getSessionDurationMinutes())
-                .build();
-    }
+    Pool toEntity(PoolDTO dto);
 
-    public static PoolDTO toDto(Pool pool) {
-        if (pool == null) {
-            return null;
-        }
-        return PoolDTO.builder()
-                .id(pool.getId())
-                .name(pool.getName())
-                .address(pool.getAddress())
-                .description(pool.getDescription())
-                .maxCapacity(pool.getMaxCapacity())
-                .sessionDurationMinutes(pool.getSessionDurationMinutes())
-                .build();
-    }
+    List<PoolDTO> toDtoList(List<Pool> pools);
+
+
+    PoolDTO toDto(Pool pool);
 
 
 }

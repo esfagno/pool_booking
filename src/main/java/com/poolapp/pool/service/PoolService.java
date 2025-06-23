@@ -9,23 +9,23 @@ import java.util.List;
 public interface PoolService {
     PoolDTO createPool(PoolDTO pool);
 
-    Pool getPoolById(Integer id);
+    Pool getPoolByName(String name);
 
     List<PoolDTO> searchPools(String name, String address, String description, Integer maxCapacity, Integer sessionDuration);
 
-    PoolDTO updatePool(Integer id, PoolDTO updatedPool);
+    PoolDTO updatePool(String poolName, PoolDTO updatedPool);
 
-    void deletePool(Integer id);
+    void deletePool(PoolDTO updatedPool);
 
-    PoolDTO updateCapacity(Integer poolId, Integer newCapacity);
+    PoolDTO updateCapacity(PoolDTO updatedPool);
 
-    PoolScheduleDTO createOrUpdateSchedule(Integer poolId, PoolScheduleDTO dto);
+    PoolScheduleDTO createOrUpdateSchedule(PoolScheduleDTO dto);
 
-    PoolScheduleDTO updateSchedule(Integer scheduleId, PoolScheduleDTO dto);
+    PoolScheduleDTO updateSchedule(PoolScheduleDTO dto);
 
-    void deleteScheduleByDay(Integer poolId, Short dayOfWeek);
+    void deleteScheduleByDay(PoolDTO poolDTO, Short dayOfWeek);
 
-    List<PoolScheduleDTO> getSchedulesForPool(Integer poolId);
+    List<PoolScheduleDTO> getSchedulesForPool(PoolDTO dto);
 
     List<PoolDTO> getPoolsByDayOfWeek(Short dayOfWeek);
 }
