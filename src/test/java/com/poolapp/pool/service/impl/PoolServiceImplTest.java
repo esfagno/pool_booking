@@ -15,6 +15,7 @@ import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 
 import java.time.LocalTime;
 import java.util.List;
@@ -35,7 +36,10 @@ class PoolServiceImplTest {
     @Mock
     private PoolScheduleRepository scheduleRepository;
 
+    @Spy
     private PoolMapper poolMapper = Mappers.getMapper(PoolMapper.class);
+
+    @Spy
     private PoolScheduleMapper poolScheduleMapper = Mappers.getMapper(PoolScheduleMapper.class);
 
     @InjectMocks
@@ -49,8 +53,6 @@ class PoolServiceImplTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-
-        poolService = new PoolServiceImpl(poolRepository, scheduleRepository, poolMapper, poolScheduleMapper);
 
         pool = new Pool();
         pool.setId(1);

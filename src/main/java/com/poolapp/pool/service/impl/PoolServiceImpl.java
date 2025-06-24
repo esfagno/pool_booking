@@ -70,7 +70,6 @@ public class PoolServiceImpl implements PoolService {
         poolRepository.deleteByName(dto.getName());
     }
 
-    @Transactional
     @Override
     public PoolDTO updateCapacity(PoolDTO dto) {
         Pool pool = getPoolByName(dto.getName());
