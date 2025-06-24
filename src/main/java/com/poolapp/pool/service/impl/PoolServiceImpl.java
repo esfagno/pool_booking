@@ -26,10 +26,6 @@ public class PoolServiceImpl implements PoolService {
     private final PoolMapper poolMapper;
     private final PoolScheduleMapper poolScheduleMapper;
 
-    private Pool getPoolByDto(PoolDTO dto) {
-        return poolRepository.findByName(dto.getName())
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + dto.getName()));
-    }
 
     @Override
     public Pool getPoolByName(String name) {
@@ -70,14 +66,14 @@ public class PoolServiceImpl implements PoolService {
     @Transactional
     @Override
     public void deletePool(PoolDTO dto) {
-        Pool pool = getPoolByDto(dto);
-        poolRepository.deleteById(pool.getId());
+        Pool pool = getPoolByName(dto.getName());
+        poolRepository.deleteByName(dto.getName());
     }
 
     @Transactional
     @Override
     public PoolDTO updateCapacity(PoolDTO dto) {
-        Pool pool = getPoolByDto(dto);
+        Pool pool = getPoolByName(dto.getName());
         pool.setMaxCapacity(dto.getMaxCapacity());
         Pool saved = poolRepository.save(pool);
         return poolMapper.toDto(saved);

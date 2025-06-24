@@ -13,6 +13,8 @@ public interface PoolRepository extends JpaRepository<Pool, Integer>, PoolCriter
 
     boolean existsByName(String name);
 
+    void deleteByName(String name);
+
     List<Pool> findPoolByFilter(String name, String address, String description, Integer maxCapacity, Integer sessionDuration);
 
 }

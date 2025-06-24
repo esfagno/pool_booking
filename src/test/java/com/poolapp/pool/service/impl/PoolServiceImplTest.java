@@ -163,7 +163,7 @@ class PoolServiceImplTest {
     void test_deletePool_shouldDeleteIfExists() {
         when(poolRepository.findByName("Main Pool")).thenReturn(Optional.of(pool));
         poolService.deletePool(poolDTO);
-        verify(poolRepository).deleteById(pool.getId());
+        verify(poolRepository).deleteByName(pool.getName());
     }
 
     @Test
