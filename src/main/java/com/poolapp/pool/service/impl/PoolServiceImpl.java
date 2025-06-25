@@ -69,10 +69,6 @@ public class PoolServiceImpl implements PoolService {
         poolRepository.deleteByName(dto.getName());
     }
 
-    public static void main(String[] args) {
-
-    }
-
     @Override
     public PoolDTO updateCapacity(PoolDTO dto) {
         Pool pool = getPoolByName(dto.getName());
