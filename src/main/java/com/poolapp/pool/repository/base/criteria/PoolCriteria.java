@@ -14,12 +14,12 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class PoolCriteria{
+public class PoolCriteria {
 
     private final EntityManager entityManager;
 
     public List<Pool> searchPoolByFilter(String name, String address, String description,
-                                       Integer maxCapacity, Integer sessionDuration) {
+                                         Integer maxCapacity, Integer sessionDuration) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Pool> query = cb.createQuery(Pool.class);
         Root<Pool> pool = query.from(Pool.class);
