@@ -13,7 +13,6 @@ import com.poolapp.pool.service.PoolService;
 import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -33,7 +32,6 @@ public class PoolServiceImpl implements PoolService {
                 .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + name));
     }
 
-    @Transactional
     @Override
     public PoolDTO createPool(PoolDTO dto) {
         Pool pool = poolMapper.toEntity(dto);
@@ -54,7 +52,6 @@ public class PoolServiceImpl implements PoolService {
         return poolMapper.toDtoList(pools);
     }
 
-    @Transactional
     @Override
     public PoolDTO updatePool(String oldName, PoolDTO updatedPool) {
         Pool pool = getPoolByName(oldName);
@@ -77,7 +74,6 @@ public class PoolServiceImpl implements PoolService {
         return poolMapper.toDto(saved);
     }
 
-    @Transactional
     @Override
     public PoolScheduleDTO createOrUpdateSchedule(PoolScheduleDTO dto) {
         Pool pool = getPoolByName(dto.getPoolName());
@@ -92,7 +88,6 @@ public class PoolServiceImpl implements PoolService {
         return poolScheduleMapper.toDto(saved);
     }
 
-    @Transactional
     @Override
     public PoolScheduleDTO updateSchedule(PoolScheduleDTO dto) {
         PoolSchedule existing = scheduleRepository.findByPoolNameAndDayOfWeek(dto.getPoolName(), dto.getDayOfWeek())
