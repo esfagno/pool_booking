@@ -13,13 +13,19 @@ import org.mapstruct.ReportingPolicy;
 import java.util.List;
 
 @Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true), nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
-        unmappedTargetPolicy = ReportingPolicy.WARN, collectionMappingStrategy = CollectionMappingStrategy.SETTER_PREFERRED)
+        unmappedTargetPolicy = ReportingPolicy.ERROR, collectionMappingStrategy = CollectionMappingStrategy.SETTER_PREFERRED)
 public interface PoolMapper {
 
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     void updatePoolFromDto(@MappingTarget Pool pool, PoolDTO dto);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
     Pool toEntity(PoolDTO dto);
+
 
     List<PoolDTO> toDtoList(List<Pool> pools);
 

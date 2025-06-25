@@ -106,7 +106,7 @@ class PoolServiceImplTest {
         PoolDTO filterDto = PoolDTO.builder()
                 .name("main")
                 .build();
-        when(poolRepository.findPoolByFilter("main", null, null, null, null))
+        when(poolRepository.searchPoolByFilter("main", null, null, null, null))
                 .thenReturn(List.of(pool));
 
         List<PoolDTO> result = poolService.searchPools(filterDto);
@@ -123,7 +123,7 @@ class PoolServiceImplTest {
                 .maxCapacity(20)
                 .sessionDurationMinutes(60)
                 .build();
-        when(poolRepository.findPoolByFilter("main", "Some Address", null, 20, 60))
+        when(poolRepository.searchPoolByFilter("main", "Some Address", null, 20, 60))
                 .thenReturn(List.of(pool));
 
         List<PoolDTO> result = poolService.searchPools(filterDto);
@@ -135,7 +135,7 @@ class PoolServiceImplTest {
     @Test
     void test_searchPools_shouldReturnAllIfNoFilter() {
         PoolDTO filterDto = PoolDTO.builder().build();
-        when(poolRepository.findPoolByFilter(null, null, null, null, null))
+        when(poolRepository.searchPoolByFilter(null, null, null, null, null))
                 .thenReturn(List.of(pool));
 
         List<PoolDTO> result = poolService.searchPools(filterDto);

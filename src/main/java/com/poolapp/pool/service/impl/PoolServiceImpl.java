@@ -46,7 +46,7 @@ public class PoolServiceImpl implements PoolService {
     @Override
     public List<PoolDTO> searchPools(PoolDTO filterDto) {
 
-        List<Pool> pools = poolRepository.findPoolByFilter(filterDto.getName(),
+        List<Pool> pools = poolRepository.searchPoolByFilter(filterDto.getName(),
                 filterDto.getAddress(),
                 filterDto.getDescription(),
                 filterDto.getMaxCapacity(),
@@ -63,11 +63,14 @@ public class PoolServiceImpl implements PoolService {
         return poolMapper.toDto(saved);
     }
 
-    @Transactional
     @Override
     public void deletePool(PoolDTO dto) {
         Pool pool = getPoolByName(dto.getName());
         poolRepository.deleteByName(dto.getName());
+    }
+
+    public static void main(String[] args) {
+
     }
 
     @Override

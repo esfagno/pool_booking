@@ -15,16 +15,18 @@ import org.mapstruct.ReportingPolicy;
 import java.util.List;
 
 @Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true), nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
-        unmappedTargetPolicy = ReportingPolicy.WARN, collectionMappingStrategy = CollectionMappingStrategy.SETTER_PREFERRED)
+        unmappedTargetPolicy = ReportingPolicy.ERROR, collectionMappingStrategy = CollectionMappingStrategy.SETTER_PREFERRED)
 public interface PoolScheduleMapper {
 
     @Mapping(source = "pool.name", target = "poolName")
     PoolScheduleDTO toDto(PoolSchedule entity);
 
+    @Mapping(source = "poolName", target = "pool.name")
+    @Mapping(target = "id", ignore = true)
     PoolSchedule toEntity(PoolScheduleDTO dto, @Context Pool contextPool);
 
     List<PoolScheduleDTO> toDtoList(List<PoolSchedule> schedules);
 
-    @Mapping(target = "pool", ignore = true)
+    @Mapping(target = "id", ignore = true)
     PoolSchedule updateScheduleWith(@MappingTarget PoolSchedule existing, PoolSchedule updated);
 }
