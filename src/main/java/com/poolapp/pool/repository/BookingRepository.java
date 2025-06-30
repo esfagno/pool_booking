@@ -1,7 +1,5 @@
 package com.poolapp.pool.repository;
 
-import com.poolapp.pool.dto.BookingDTO;
-import com.poolapp.pool.dto.SessionDTO;
 import com.poolapp.pool.model.Booking;
 import com.poolapp.pool.model.BookingId;
 import com.poolapp.pool.model.enums.BookingStatus;

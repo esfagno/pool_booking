@@ -1,7 +1,6 @@
 package com.poolapp.pool.repository.base.criteria;
 
 import com.poolapp.pool.model.Booking;
-import com.poolapp.pool.model.enums.BookingStatus;
 import com.poolapp.pool.repository.custom.BookingRepositoryCustom;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
@@ -12,7 +11,6 @@ import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +22,7 @@ public class BookingCriteria implements BookingRepositoryCustom {
 
 
     @Override
-    public List<Booking> findBookingsByFilter(String userEmail, BookingStatus status, String poolName, LocalDateTime startTime) {
+    public List<Booking> findBookingsByFilter(Booking booking) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Booking> query = cb.createQuery(Booking.class);
         Root<Booking> bookingRoot = query.from(Booking.class);
@@ -35,20 +33,25 @@ public class BookingCriteria implements BookingRepositoryCustom {
 
         List<Predicate> predicates = new ArrayList<>();
 
-        if (userEmail != null && !userEmail.isBlank()) {
-            predicates.add(cb.equal(cb.lower(userJoin.get("email")), userEmail.toLowerCase()));
+        if (booking.getId() != null) {
+            if (booking.getId().getUserId() != null) {
+                predicates.add(cb.equal(bookingRoot.get("id").get("userId"), booking.getId().getUserId()));
+            }
+            if (booking.getId().getSessionId() != null) {
+                predicates.add(cb.equal(bookingRoot.get("id").get("sessionId"), booking.getId().getSessionId()));
+            }
         }
 
-        if (status != null) {
-            predicates.add(cb.equal(bookingRoot.get("status"), status));
+        if (booking.getStatus() != null) {
+            predicates.add(cb.equal(bookingRoot.get("status"), booking.getStatus()));
         }
 
-        if (poolName != null && !poolName.isBlank()) {
-            predicates.add(cb.equal(cb.lower(poolJoin.get("name")), poolName.toLowerCase()));
+        if (booking.getSession().getPool().getName() != null && !booking.getSession().getPool().getName().isBlank()) {
+            predicates.add(cb.equal(cb.lower(poolJoin.get("name")), booking.getSession().getPool().getName().toLowerCase()));
         }
 
-        if (startTime != null) {
-            predicates.add(cb.equal(sessionJoin.get("startTime"), startTime));
+        if (booking.getSession().getStartTime() != null) {
+            predicates.add(cb.equal(sessionJoin.get("startTime"), booking.getSession().getStartTime()));
         }
 
         query.where(cb.and(predicates.toArray(new Predicate[0])));

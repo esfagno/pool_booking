@@ -14,7 +14,7 @@ public interface SessionService {
 
     void incrementSessionCapacity(SessionDTO sessionDTO);
 
-    List<SessionDTO> getAllSessions();
+    List<SessionDTO> findSessionsByFilter(SessionDTO sessionDTO);
 
     boolean validateSessionHasAvailableSpots(SessionDTO sessionDTO);
 

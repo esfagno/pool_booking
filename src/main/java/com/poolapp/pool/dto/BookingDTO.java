@@ -1,6 +1,7 @@
 package com.poolapp.pool.dto;
 
 import com.poolapp.pool.model.enums.BookingStatus;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +23,10 @@ public class BookingDTO {
     @Size(max = 255)
     @Email
     private String userEmail;
+
+    @Valid
+    @NotBlank
+    private SessionDTO sessionDTO;
 
     @NotNull
     private LocalDateTime bookingTime;

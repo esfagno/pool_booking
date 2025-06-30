@@ -39,65 +39,69 @@ public class BookingServiceImpl implements BookingService {
     private final MailService mailService;
 
 
-    public Booking findBooking(BookingDTO bookingDTO, SessionDTO sessionDTO) {
-        return bookingRepository.findById(buildBookingId(bookingDTO, sessionDTO))
+    private Booking findBooking(BookingDTO bookingDTO) {
+        return bookingRepository.findById(buildBookingId(bookingDTO))
                 .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.BOOKING_NOT_FOUND));
     }
 
-    public BookingId buildBookingId(BookingDTO bookingDTO, SessionDTO sessionDTO) {
+    private BookingId buildBookingId(BookingDTO bookingDTO) {
         User user = userService.findUserByEmail(bookingDTO.getUserEmail());
-        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        Session session = sessionService.getSessionByPoolNameAndStartTime(bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime());
         return new BookingId(user.getId(), session.getId());
     }
 
     @Transactional
     @Override
-    public BookingDTO createBooking(BookingDTO bookingDTO, SessionDTO sessionDTO) {
+    public BookingDTO createBooking(BookingDTO bookingDTO) {
 
 //I will add the subscription implementation later and add and I’ll add the subscription logic here
 
-        BookingId bookingId = buildBookingId(bookingDTO, sessionDTO);
+        BookingId bookingId = buildBookingId(bookingDTO);
         userService.hasActiveBooking(bookingDTO.getUserEmail(), LocalDateTime.now());
-        sessionService.validateSessionHasAvailableSpots(sessionDTO);
+        sessionService.validateSessionHasAvailableSpots(bookingDTO.getSessionDTO());
 
         Booking booking = bookingMapper.toEntity(bookingDTO);
         booking.setId(bookingId);
 
         Booking saved = bookingRepository.save(booking);
-        sessionService.decrementSessionCapacity(sessionDTO);
-        mailService.sendBookingConfirmationEmail(bookingDTO.getUserEmail(), sessionDTO);
+        sessionService.decrementSessionCapacity(bookingDTO.getSessionDTO());
+        mailService.sendBookingConfirmationEmail(bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
 
         return bookingMapper.toDto(saved);
     }
 
     @Transactional
     @Override
-    public void deleteBooking(BookingDTO bookingDTO, SessionDTO sessionDTO) {
-        bookingRepository.deleteById(buildBookingId(bookingDTO, sessionDTO));
-        sessionService.incrementSessionCapacity(sessionDTO);
+    public void deleteBooking(BookingDTO bookingDTO) {
+        bookingRepository.deleteById(buildBookingId(bookingDTO));
+        sessionService.incrementSessionCapacity(bookingDTO.getSessionDTO());
     }
 
     @Transactional
     @Override
-    public void cancelBooking(BookingDTO bookingDTO, SessionDTO sessionDTO) {
-        if (findBooking(bookingDTO, sessionDTO).getStatus() != BookingStatus.ACTIVE) {
-            throw new IllegalStateException(ErrorMessages.WRONG_STATUS + findBooking(bookingDTO, sessionDTO).getStatus());
+    public void cancelBooking(BookingDTO bookingDTO) {
+        if (findBooking(bookingDTO).getStatus() != BookingStatus.ACTIVE) {
+            throw new IllegalStateException(ErrorMessages.WRONG_STATUS + findBooking(bookingDTO).getStatus());
         }
-        findBooking(bookingDTO, sessionDTO).setStatus(BookingStatus.CANCELLED);
-        sessionService.incrementSessionCapacity(sessionDTO);
+        findBooking(bookingDTO).setStatus(BookingStatus.CANCELLED);
+        sessionService.incrementSessionCapacity(bookingDTO.getSessionDTO());
     }
 
     @Override
-    public List<BookingDTO> findBookingsByFilter(BookingDTO bookingDTO, SessionDTO sessionDTO) {
-        List<Booking> bookings = bookingRepository.findBookingsByFilter(bookingDTO.getUserEmail(), findBooking(bookingDTO, sessionDTO).getStatus(), sessionDTO.getPoolName(), sessionDTO.getStartTime());
+    public List<BookingDTO> findBookingsByFilter(BookingDTO bookingDTO) {
+        BookingId bookingId = buildBookingId(bookingDTO);
+        Booking booking = bookingMapper.toEntity(bookingDTO);
+        booking.setId(bookingId);
+        List<Booking> bookings = bookingRepository.findBookingsByFilter(booking);
         return bookingMapper.toDtoList(bookings);
     }
 
     @Override
-    @Transactional
-    public BookingDTO updateBooking(BookingDTO bookingDTO, SessionDTO oldSession, SessionDTO newSession) {
-        deleteBooking(bookingDTO, oldSession);
-        return createBooking(bookingDTO, newSession);
+    public BookingDTO updateBooking(BookingDTO bookingDTO, BookingDTO newBookingDTO) {
+        Booking booking = findBooking(bookingDTO);
+        bookingMapper.updateBookingFromDto(booking, newBookingDTO);
+        Booking savedBooking = bookingRepository.save(booking);
+        return bookingMapper.toDto(savedBooking);
     }
 
     @Override
@@ -111,14 +115,6 @@ public class BookingServiceImpl implements BookingService {
         List<Booking> expired = bookingRepository.findBySession_StartTimeBeforeAndStatus(now, BookingStatus.ACTIVE);
         expired.forEach(b -> b.setStatus(BookingStatus.COMPLETED));
         bookingRepository.saveAll(expired);
-    }
-
-    @Override
-    @Transactional
-    public void cancelAllUserBookings(String userEmail) {
-        List<Booking> active = bookingRepository.findByUser_EmailAndStatus(userEmail, BookingStatus.ACTIVE);
-        active.forEach(b -> b.setStatus(BookingStatus.CANCELLED));
-        bookingRepository.saveAll(active);
     }
 
     @Override

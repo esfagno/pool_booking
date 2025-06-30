@@ -8,21 +8,19 @@ import java.util.List;
 
 public interface BookingService {
 
-    BookingDTO createBooking(BookingDTO bookingDTO, SessionDTO sessionDTO);
+    BookingDTO createBooking(BookingDTO bookingDTO);
 
-    BookingDTO updateBooking(BookingDTO bookingDTO, SessionDTO oldSession, SessionDTO newSession);
+    BookingDTO updateBooking(BookingDTO bookingDTO, BookingDTO newBookingDTO);
 
     boolean hasUserBooked(String userEmail, LocalDateTime sessionStartTime);
 
     void expirePastBookings(LocalDateTime now);
 
-    void cancelAllUserBookings(String userEmail);
+    void cancelBooking(BookingDTO bookingDTO);
 
-    void cancelBooking(BookingDTO bookingDTO, SessionDTO sessionDTO);
+    void deleteBooking(BookingDTO bookingDTO);
 
-    void deleteBooking(BookingDTO bookingDTO, SessionDTO sessionDTO);
-
-    List<BookingDTO> findBookingsByFilter(BookingDTO bookingDTO, SessionDTO sessionDTO);
+    List<BookingDTO> findBookingsByFilter(BookingDTO bookingDTO);
 
     void deleteBookingsBySession(SessionDTO sessionDTO);
 

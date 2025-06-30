@@ -132,15 +132,6 @@ class SessionServiceImplTest {
         assertThrows(ModelNotFoundException.class, () -> sessionService.incrementSessionCapacity(sessionDTO));
     }
 
-    @Test
-    void test_getAllSessions_shouldReturnSessionDTOList() {
-        when(sessionRepository.findAll()).thenReturn(List.of(session));
-
-        List<SessionDTO> result = sessionService.getAllSessions();
-
-        assertEquals(1, result.size());
-        assertEquals("Main Pool", result.get(0).getPoolName());
-    }
 
     @Test
     void test_getSessionByPoolNameAndStartTime_shouldReturnSession() {
@@ -179,4 +170,31 @@ class SessionServiceImplTest {
 
         assertThrows(IllegalStateException.class, () -> sessionService.validateSessionHasAvailableSpots(sessionDTO));
     }
+
+    @Test
+    void test_findSessionsByFilter_shouldReturnListOfSessionDTO() {
+        Session sessionResult = new Session();
+        sessionResult.setId(2);
+        sessionResult.setStartTime(LocalDateTime.of(2025, 6, 27, 12, 0));
+        Pool pool = new Pool();
+        pool.setId(1);
+        pool.setName("Main Pool");
+        sessionResult.setPool(pool);
+        sessionResult.setCurrentCapacity(10);
+
+        when(sessionRepository.findSessionsByFilter(any(Session.class)))
+                .thenReturn(List.of(sessionResult));
+
+        List<SessionDTO> result = sessionService.findSessionsByFilter(sessionDTO);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        SessionDTO dto = result.get(0);
+        assertEquals("Main Pool", dto.getPoolName());
+        assertEquals(LocalDateTime.of(2025, 6, 27, 12, 0), dto.getStartTime());
+
+        verify(sessionRepository, times(1))
+                .findSessionsByFilter(any(Session.class));
+    }
+
 }

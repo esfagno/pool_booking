@@ -5,6 +5,7 @@ import com.poolapp.pool.model.User;
 import com.poolapp.pool.repository.BookingRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.service.UserService;
+import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -21,7 +22,7 @@ public class UserServiceImpl implements UserService {
 
     public User findUserByEmail(String email) {
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ModelNotFoundException("User not found: " + email));
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND + email));
     }
 
     public boolean hasActiveBooking(String email, LocalDateTime currentTime) {

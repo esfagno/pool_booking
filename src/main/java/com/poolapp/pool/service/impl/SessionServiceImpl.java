@@ -69,9 +69,9 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
-    public List<SessionDTO> getAllSessions() {
-        return sessionRepository.findAll()
-                .stream()
+    public List<SessionDTO> findSessionsByFilter(SessionDTO sessionDTO) {
+        Session session = sessionMapper.toEntity(sessionDTO);
+        return sessionRepository.findSessionsByFilter(session).stream()
                 .map(sessionMapper::toDto)
                 .toList();
     }

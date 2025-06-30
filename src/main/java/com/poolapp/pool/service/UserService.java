@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 
 public interface UserService {
     User findUserByEmail(String email);
+
     boolean hasActiveBooking(String email, LocalDateTime currentTime);
 }
 
