@@ -5,20 +5,19 @@ import com.poolapp.pool.model.Session;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public interface SessionService {
 
     SessionDTO createSession(SessionDTO sessionDTO);
 
-    void decrementSessionCapacity(SessionDTO sessionDTO);
-
-    void incrementSessionCapacity(SessionDTO sessionDTO);
+    void changeSessionCapacity(SessionDTO sessionDTO, int delta);
 
     List<SessionDTO> findSessionsByFilter(SessionDTO sessionDTO);
 
     boolean validateSessionHasAvailableSpots(SessionDTO sessionDTO);
 
-    Session getSessionByPoolNameAndStartTime(String poolName, LocalDateTime startTime);
+    Optional<Session> getSessionByPoolNameAndStartTime(String poolName, LocalDateTime startTime);
 
 
 }

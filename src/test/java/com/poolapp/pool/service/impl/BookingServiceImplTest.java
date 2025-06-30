@@ -256,7 +256,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void test_findBookingsByFilter_success() {
+    void test_findBookingsByFilter_successByDTO() {
         BookingId bookingId = new BookingId(user.getId(), session.getId());
         Booking booking = new Booking();
         booking.setId(bookingId);
@@ -282,7 +282,7 @@ class BookingServiceImplTest {
     }
 
     @Test
-    void test_findBookingsByFilter_multipleFields() {
+    void test_findBookingsByFilter_multipleFieldsByDTO() {
         Booking booking1 = new Booking();
         booking1.setStatus(ACTIVE);
         booking1.setUser(user);
@@ -312,7 +312,7 @@ class BookingServiceImplTest {
 
 
     @Test
-    void test_findBookingsByFilter_noBookingsFound_shouldReturnEmptyList() {
+    void test_findBookingsByFilter_noBookingsFound_shouldReturnEmptyListByDTO() {
         BookingId bookingId = new BookingId(user.getId(), session.getId());
         Booking booking = new Booking();
         booking.setId(bookingId);

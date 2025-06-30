@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -20,13 +21,15 @@ public class UserServiceImpl implements UserService {
 
     //Spring Security??
 
-    public User findUserByEmail(String email) {
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND + email));
+    public Optional<User> findUserByEmail(String email) {
+        return userRepository.findByEmail(email);
     }
 
+
     public boolean hasActiveBooking(String email, LocalDateTime currentTime) {
-        return bookingRepository.existsByUserIdAndSessionStartTimeAfter(findUserByEmail(email).getId(), currentTime);
+        return findUserByEmail(email)
+                .map(user -> bookingRepository.existsByUserIdAndSessionStartTimeAfter(user.getId(), currentTime))
+                .orElse(false);
     }
 }
 

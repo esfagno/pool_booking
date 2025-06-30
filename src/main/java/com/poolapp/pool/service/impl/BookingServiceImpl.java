@@ -39,17 +39,6 @@ public class BookingServiceImpl implements BookingService {
     private final MailService mailService;
 
 
-    private Booking findBooking(BookingDTO bookingDTO) {
-        return bookingRepository.findById(buildBookingId(bookingDTO))
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.BOOKING_NOT_FOUND));
-    }
-
-    private BookingId buildBookingId(BookingDTO bookingDTO) {
-        User user = userService.findUserByEmail(bookingDTO.getUserEmail());
-        Session session = sessionService.getSessionByPoolNameAndStartTime(bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime());
-        return new BookingId(user.getId(), session.getId());
-    }
-
     @Transactional
     @Override
     public BookingDTO createBooking(BookingDTO bookingDTO) {
@@ -64,7 +53,7 @@ public class BookingServiceImpl implements BookingService {
         booking.setId(bookingId);
 
         Booking saved = bookingRepository.save(booking);
-        sessionService.decrementSessionCapacity(bookingDTO.getSessionDTO());
+        sessionService.changeSessionCapacity(bookingDTO.getSessionDTO(), -1);
         mailService.sendBookingConfirmationEmail(bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
 
         return bookingMapper.toDto(saved);
@@ -74,17 +63,18 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public void deleteBooking(BookingDTO bookingDTO) {
         bookingRepository.deleteById(buildBookingId(bookingDTO));
-        sessionService.incrementSessionCapacity(bookingDTO.getSessionDTO());
+        sessionService.changeSessionCapacity(bookingDTO.getSessionDTO(), +1);
     }
 
     @Transactional
     @Override
     public void cancelBooking(BookingDTO bookingDTO) {
-        if (findBooking(bookingDTO).getStatus() != BookingStatus.ACTIVE) {
-            throw new IllegalStateException(ErrorMessages.WRONG_STATUS + findBooking(bookingDTO).getStatus());
+        Booking booking = findBookingByDTO(bookingDTO);
+        switch (booking.getStatus()) {
+            case ACTIVE -> booking.setStatus(BookingStatus.CANCELLED);
+            default -> throw new IllegalStateException(ErrorMessages.WRONG_STATUS + booking.getStatus());
         }
-        findBooking(bookingDTO).setStatus(BookingStatus.CANCELLED);
-        sessionService.incrementSessionCapacity(bookingDTO.getSessionDTO());
+        sessionService.changeSessionCapacity(bookingDTO.getSessionDTO(), +1);
     }
 
     @Override
@@ -92,13 +82,13 @@ public class BookingServiceImpl implements BookingService {
         BookingId bookingId = buildBookingId(bookingDTO);
         Booking booking = bookingMapper.toEntity(bookingDTO);
         booking.setId(bookingId);
-        List<Booking> bookings = bookingRepository.findBookingsByFilter(booking);
+        List<Booking> bookings = bookingRepository.findBookingsByFilter(booking.getId(), booking.getStatus(), booking.getSession().getPool().getName(), booking.getSession().getStartTime());
         return bookingMapper.toDtoList(bookings);
     }
 
     @Override
     public BookingDTO updateBooking(BookingDTO bookingDTO, BookingDTO newBookingDTO) {
-        Booking booking = findBooking(bookingDTO);
+        Booking booking = findBookingByDTO(bookingDTO);
         bookingMapper.updateBookingFromDto(booking, newBookingDTO);
         Booking savedBooking = bookingRepository.save(booking);
         return bookingMapper.toDto(savedBooking);
@@ -119,15 +109,31 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     public void deleteBookingsBySession(SessionDTO sessionDTO) {
-        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())
+                .orElseThrow(() -> new ModelNotFoundException(String.format(ErrorMessages.SESSION_NOT_FOUND, sessionDTO.getPoolName(), sessionDTO.getStartTime())));
         bookingRepository.deleteAllBySessionId(session.getId());
-
     }
 
     @Override
     public long countBookingsBySession(SessionDTO sessionDTO) {
-        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())
+                .orElseThrow(() -> new ModelNotFoundException(String.format(ErrorMessages.SESSION_NOT_FOUND, sessionDTO.getPoolName(), sessionDTO.getStartTime())));
         return bookingRepository.countBySessionId(session.getId());
     }
+
+    private Booking findBookingByDTO(BookingDTO bookingDTO) {
+        return bookingRepository.findById(buildBookingId(bookingDTO))
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.BOOKING_NOT_FOUND));
+    }
+
+    private BookingId buildBookingId(BookingDTO bookingDTO) {
+        User user = userService.findUserByEmail(bookingDTO.getUserEmail())
+                .orElseThrow(() -> new ModelNotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, bookingDTO.getUserEmail())));
+
+        Session session = sessionService.getSessionByPoolNameAndStartTime(bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime())
+                .orElseThrow(() -> new ModelNotFoundException(String.format(ErrorMessages.SESSION_NOT_FOUND, bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime())));
+        return new BookingId(user.getId(), session.getId());
+    }
+
 
 }
