@@ -3,6 +3,7 @@ package com.poolapp.pool.service.impl;
 import com.poolapp.pool.dto.BookingDTO;
 import com.poolapp.pool.dto.SessionDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
+import com.poolapp.pool.exception.NotActiveException;
 import com.poolapp.pool.mapper.BookingMapper;
 import com.poolapp.pool.model.Booking;
 import com.poolapp.pool.model.BookingId;
@@ -72,7 +73,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = findBookingByDTO(bookingDTO);
         switch (booking.getStatus()) {
             case ACTIVE -> booking.setStatus(BookingStatus.CANCELLED);
-            default -> throw new IllegalStateException(ErrorMessages.WRONG_STATUS + booking.getStatus());
+            default -> throw new NotActiveException(ErrorMessages.WRONG_STATUS + booking.getStatus());
         }
         sessionService.changeSessionCapacity(bookingDTO.getSessionDTO(), +1);
     }

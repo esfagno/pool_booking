@@ -12,6 +12,7 @@ import jakarta.persistence.criteria.Root;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -22,7 +23,7 @@ public class SessionCriteria implements SessionRepositoryCustom {
     private final EntityManager entityManager;
 
     @Override
-    public List<Session> findSessionsByFilter(Session session) {
+    public List<Session> findSessionsByFilter(String poolName, LocalDateTime startTime, LocalDateTime endTime) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Session> query = cb.createQuery(Session.class);
         Root<Session> sessionRoot = query.from(Session.class);
@@ -31,24 +32,24 @@ public class SessionCriteria implements SessionRepositoryCustom {
 
         List<Predicate> predicates = new ArrayList<>();
 
-        if (session.getPool().getName() != null && !session.getPool().getName().isBlank()) {
+        if (poolName != null && !poolName.isBlank()) {
             predicates.add(
                     cb.equal(
                             cb.lower(poolJoin.get("name")),
-                            session.getPool().getName().toLowerCase()
+                            poolName.toLowerCase()
                     )
             );
         }
 
-        if (session.getStartTime() != null) {
+        if (startTime != null) {
             predicates.add(
-                    cb.equal(sessionRoot.get("startTime"), session.getStartTime())
+                    cb.equal(sessionRoot.get("startTime"), startTime)
             );
         }
 
-        if (session.getEndTime() != null) {
+        if (endTime != null) {
             predicates.add(
-                    cb.equal(sessionRoot.get("endTime"), session.getEndTime())
+                    cb.equal(sessionRoot.get("endTime"), endTime)
             );
         }
 

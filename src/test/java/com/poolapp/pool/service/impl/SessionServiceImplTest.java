@@ -2,6 +2,7 @@ package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.SessionDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
+import com.poolapp.pool.exception.NoFreePlacesException;
 import com.poolapp.pool.mapper.SessionMapper;
 import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.Session;
@@ -21,14 +22,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 class SessionServiceImplTest {
 
@@ -85,71 +81,54 @@ class SessionServiceImplTest {
     }
 
     @Test
-    void test_decrementSessionCapacity_shouldDecreaseCapacity() {
+    void test_changeSessionCapacity_shouldDecreaseCapacity() {
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.of(session));
 
-        sessionService.decrementSessionCapacity(sessionDTO);
+        sessionService.changeSessionCapacity(sessionDTO, -1);
 
         assertEquals(4, session.getCurrentCapacity());
         verify(sessionRepository, times(1)).save(session);
     }
 
     @Test
-    void test_decrementSessionCapacity_shouldThrowIfNoFreePlaces() {
+    void test_changeSessionCapacity_shouldThrowIfNoFreePlaces() {
         session.setCurrentCapacity(0);
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.of(session));
 
-        assertThrows(IllegalStateException.class, () -> sessionService.decrementSessionCapacity(sessionDTO));
+        assertThrows(NoFreePlacesException.class, () -> sessionService.changeSessionCapacity(sessionDTO, -1));
         verify(sessionRepository, never()).save(any());
     }
 
     @Test
-    void test_decrementSessionCapacity_shouldThrowIfSessionNotFound() {
+    void test_changeSessionCapacity_shouldThrowIfSessionNotFound() {
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.empty());
 
-        assertThrows(ModelNotFoundException.class, () -> sessionService.decrementSessionCapacity(sessionDTO));
+        assertThrows(ModelNotFoundException.class, () -> sessionService.changeSessionCapacity(sessionDTO, -1));
     }
 
     @Test
-    void test_incrementSessionCapacity_shouldIncreaseCapacity() {
+    void test_changeSessionCapacity_shouldIncreaseCapacity() {
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.of(session));
 
-        sessionService.incrementSessionCapacity(sessionDTO);
+        sessionService.changeSessionCapacity(sessionDTO, 1);
 
         assertEquals(6, session.getCurrentCapacity());
         verify(sessionRepository, times(1)).save(session);
     }
 
     @Test
-    void test_incrementSessionCapacity_shouldThrowIfSessionNotFound() {
-        when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
-                .thenReturn(Optional.empty());
-
-        assertThrows(ModelNotFoundException.class, () -> sessionService.incrementSessionCapacity(sessionDTO));
-    }
-
-
-    @Test
     void test_getSessionByPoolNameAndStartTime_shouldReturnSession() {
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.of(session));
 
-        Session result = sessionService.getSessionByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime());
+        Optional<Session> result = sessionService.getSessionByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime());
 
-        assertNotNull(result);
-        assertEquals(session, result);
-    }
-
-    @Test
-    void test_getSessionByPoolNameAndStartTime_shouldThrowIfNotFound() {
-        when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
-                .thenReturn(Optional.empty());
-
-        assertThrows(ModelNotFoundException.class, () -> sessionService.getSessionByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()));
+        assertTrue(result.isPresent());
+        assertEquals(session, result.get());
     }
 
     @Test
@@ -168,7 +147,7 @@ class SessionServiceImplTest {
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.of(session));
 
-        assertThrows(IllegalStateException.class, () -> sessionService.validateSessionHasAvailableSpots(sessionDTO));
+        assertThrows(NoFreePlacesException.class, () -> sessionService.validateSessionHasAvailableSpots(sessionDTO));
     }
 
     @Test
@@ -182,7 +161,7 @@ class SessionServiceImplTest {
         sessionResult.setPool(pool);
         sessionResult.setCurrentCapacity(10);
 
-        when(sessionRepository.findSessionsByFilter(any(Session.class)))
+        when(sessionRepository.findSessionsByFilter(eq("Main Pool"), any(), any()))
                 .thenReturn(List.of(sessionResult));
 
         List<SessionDTO> result = sessionService.findSessionsByFilter(sessionDTO);
@@ -194,7 +173,6 @@ class SessionServiceImplTest {
         assertEquals(LocalDateTime.of(2025, 6, 27, 12, 0), dto.getStartTime());
 
         verify(sessionRepository, times(1))
-                .findSessionsByFilter(any(Session.class));
+                .findSessionsByFilter(eq("Main Pool"), any(), any());
     }
-
 }

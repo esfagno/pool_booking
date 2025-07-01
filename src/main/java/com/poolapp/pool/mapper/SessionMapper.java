@@ -1,6 +1,8 @@
 package com.poolapp.pool.mapper;
 
+import com.poolapp.pool.dto.PoolDTO;
 import com.poolapp.pool.dto.SessionDTO;
+import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.Session;
 import org.mapstruct.Builder;
 import org.mapstruct.CollectionMappingStrategy;
@@ -9,14 +11,14 @@ import org.mapstruct.Mapping;
 import org.mapstruct.NullValueCheckStrategy;
 import org.mapstruct.ReportingPolicy;
 
-@Mapper(componentModel = "spring", builder = @Builder(disableBuilder = true),
+@Mapper(componentModel = "spring", uses = {PoolMapper.class}, builder = @Builder(disableBuilder = true),
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
         unmappedTargetPolicy = ReportingPolicy.ERROR,
         collectionMappingStrategy = CollectionMappingStrategy.SETTER_PREFERRED)
 public interface SessionMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "pool", ignore = true)
+    @Mapping(target = "pool", source = "poolName")
     @Mapping(target = "currentCapacity", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
