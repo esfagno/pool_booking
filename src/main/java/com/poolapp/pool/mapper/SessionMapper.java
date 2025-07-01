@@ -1,8 +1,6 @@
 package com.poolapp.pool.mapper;
 
-import com.poolapp.pool.dto.PoolDTO;
 import com.poolapp.pool.dto.SessionDTO;
-import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.Session;
 import org.mapstruct.Builder;
 import org.mapstruct.CollectionMappingStrategy;

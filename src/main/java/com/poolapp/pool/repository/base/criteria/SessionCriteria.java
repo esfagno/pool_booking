@@ -2,7 +2,6 @@ package com.poolapp.pool.repository.base.criteria;
 
 import com.poolapp.pool.model.Session;
 import com.poolapp.pool.repository.custom.SessionRepositoryCustom;
-import com.poolapp.pool.dto.SessionDTO;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;

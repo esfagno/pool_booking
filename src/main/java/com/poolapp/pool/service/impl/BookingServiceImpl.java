@@ -47,7 +47,9 @@ public class BookingServiceImpl implements BookingService {
 //I will add the subscription implementation later and add and I’ll add the subscription logic here
 
         BookingId bookingId = buildBookingId(bookingDTO);
-        userService.hasActiveBooking(bookingDTO.getUserEmail(), LocalDateTime.now());
+        if (userService.hasActiveBooking(bookingDTO.getUserEmail(), LocalDateTime.now())) {
+            throw new NotActiveException(ErrorMessages.ALREADY_ACTIVE);
+        }
         sessionService.validateSessionHasAvailableSpots(bookingDTO.getSessionDTO());
 
         Booking booking = bookingMapper.toEntity(bookingDTO);

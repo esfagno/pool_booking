@@ -9,6 +9,7 @@ public final class ErrorMessages {
     public static final String SESSION_NOT_FOUND = "Session not found:";
     public static final String NO_FREE_PLACES = "No free places found:";
     public static final String WRONG_STATUS = "Cannot delete booking. Current status:";
+    public static final String ALREADY_ACTIVE = "User already has an active booking";
 
     private ErrorMessages() {
     }

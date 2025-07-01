@@ -111,6 +111,7 @@ class BookingServiceImplTest {
         bookingDTO = new BookingDTO();
         bookingDTO.setUserEmail("user@example.com");
         bookingDTO.setSessionDTO(sessionDTO);
+        bookingDTO.setStatus(ACTIVE);
 
         sessionDTO = new SessionDTO();
         sessionDTO.setPoolName("Main Pool");

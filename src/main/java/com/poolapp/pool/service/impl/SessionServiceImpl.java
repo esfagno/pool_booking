@@ -73,7 +73,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public List<SessionDTO> findSessionsByFilter(SessionDTO sessionDTO) {
-        return sessionRepository.findSessionsByFilter(sessionDTO.getPoolName(), sessionDTO.getStartTime(),sessionDTO.getEndTime()).stream()
+        return sessionRepository.findSessionsByFilter(sessionDTO.getPoolName(), sessionDTO.getStartTime(), sessionDTO.getEndTime()).stream()
                 .map(sessionMapper::toDto)
                 .toList();
     }
