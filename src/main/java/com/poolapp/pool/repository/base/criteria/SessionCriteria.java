@@ -1,7 +1,6 @@
 package com.poolapp.pool.repository.base.criteria;
 
 import com.poolapp.pool.model.Session;
-import com.poolapp.pool.repository.custom.SessionRepositoryCustom;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -17,11 +16,10 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class SessionCriteria implements SessionRepositoryCustom {
+public class SessionCriteria {
 
     private final EntityManager entityManager;
 
-    @Override
     public List<Session> findSessionsByFilter(String poolName, LocalDateTime startTime, LocalDateTime endTime) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Session> query = cb.createQuery(Session.class);

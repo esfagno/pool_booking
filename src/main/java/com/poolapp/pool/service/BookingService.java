@@ -24,5 +24,5 @@ public interface BookingService {
 
     void deleteBookingsBySession(SessionDTO sessionDTO);
 
-    long countBookingsBySession(SessionDTO sessionDTO);
+    Long countBookingsBySession(SessionDTO sessionDTO);
 }

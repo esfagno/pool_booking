@@ -4,12 +4,12 @@ import com.poolapp.pool.dto.SessionDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.exception.NoFreePlacesException;
 import com.poolapp.pool.mapper.SessionMapper;
-import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.Session;
 import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.SessionRepository;
 import com.poolapp.pool.service.PoolService;
 import com.poolapp.pool.service.SessionService;
+import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -45,22 +45,23 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public SessionDTO createSession(SessionDTO sessionDTO) {
-        Pool pool = poolService.getPoolByName(sessionDTO.getPoolName());
-
         Session session = sessionMapper.toEntity(sessionDTO);
-        session.setPool(pool);
-
+        sessionMapper.setPoolFromName(sessionDTO, session, poolService);
         Session saved = sessionRepository.save(session);
         return sessionMapper.toDto(saved);
     }
 
 
     @Override
-    public void changeSessionCapacity(SessionDTO sessionDTO, int delta) {
+    public void changeSessionCapacity(ChangeSessionCapacityRequest request) {
+        SessionDTO sessionDTO = request.getSessionDTO();
         Session session = getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.SESSION_NOT_FOUND + sessionDTO.getPoolName() + " at time: " + sessionDTO.getStartTime()));
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.SESSION_NOT_FOUND));
 
-        int newCapacity = session.getCurrentCapacity() + delta;
+        int newCapacity = switch (request.getOperation()) {
+            case INCREASE -> session.getCurrentCapacity() + 1;
+            case DECREASE -> session.getCurrentCapacity() - 1;
+        };
 
         if (newCapacity < 0) {
             throw new NoFreePlacesException(ErrorMessages.NO_FREE_PLACES);
@@ -72,8 +73,11 @@ public class SessionServiceImpl implements SessionService {
 
 
     @Override
-    public List<SessionDTO> findSessionsByFilter(SessionDTO sessionDTO) {
-        return sessionRepository.findSessionsByFilter(sessionDTO.getPoolName(), sessionDTO.getStartTime(), sessionDTO.getEndTime()).stream()
+    public List<SessionDTO> findSessionsByFilter(SessionDTO filterDTO) {
+        Session filter = sessionMapper.toEntity(filterDTO);
+        sessionMapper.setPoolFromName(filterDTO, filter, poolService);
+        return sessionRepository.findSessionsByFilter(filter)
+                .stream()
                 .map(sessionMapper::toDto)
                 .toList();
     }

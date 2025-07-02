@@ -18,6 +18,8 @@ import com.poolapp.pool.service.BookingService;
 import com.poolapp.pool.service.MailService;
 import com.poolapp.pool.service.SessionService;
 import com.poolapp.pool.service.UserService;
+import com.poolapp.pool.util.CapacityOperation;
+import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -56,7 +58,10 @@ public class BookingServiceImpl implements BookingService {
         booking.setId(bookingId);
 
         Booking saved = bookingRepository.save(booking);
-        sessionService.changeSessionCapacity(bookingDTO.getSessionDTO(), -1);
+        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
+        request.setSessionDTO(bookingDTO.getSessionDTO());
+        request.setOperation(CapacityOperation.DECREASE);
+        sessionService.changeSessionCapacity(request);
         mailService.sendBookingConfirmationEmail(bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
 
         return bookingMapper.toDto(saved);
@@ -66,7 +71,10 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public void deleteBooking(BookingDTO bookingDTO) {
         bookingRepository.deleteById(buildBookingId(bookingDTO));
-        sessionService.changeSessionCapacity(bookingDTO.getSessionDTO(), +1);
+        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
+        request.setSessionDTO(bookingDTO.getSessionDTO());
+        request.setOperation(CapacityOperation.INCREASE);
+        sessionService.changeSessionCapacity(request);
     }
 
     @Transactional
@@ -77,15 +85,18 @@ public class BookingServiceImpl implements BookingService {
             case ACTIVE -> booking.setStatus(BookingStatus.CANCELLED);
             default -> throw new NotActiveException(ErrorMessages.WRONG_STATUS + booking.getStatus());
         }
-        sessionService.changeSessionCapacity(bookingDTO.getSessionDTO(), +1);
+        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
+        request.setSessionDTO(bookingDTO.getSessionDTO());
+        request.setOperation(CapacityOperation.INCREASE);
+        sessionService.changeSessionCapacity(request);
     }
 
     @Override
-    public List<BookingDTO> findBookingsByFilter(BookingDTO bookingDTO) {
-        BookingId bookingId = buildBookingId(bookingDTO);
-        Booking booking = bookingMapper.toEntity(bookingDTO);
-        booking.setId(bookingId);
-        List<Booking> bookings = bookingRepository.findBookingsByFilter(booking.getId(), booking.getStatus(), booking.getSession().getPool().getName(), booking.getSession().getStartTime());
+    public List<BookingDTO> findBookingsByFilter(BookingDTO filterDTO) {
+        BookingId bookingId = buildBookingId(filterDTO);
+        Booking filter = bookingMapper.toEntity(filterDTO);
+        filter.setId(bookingId);
+        List<Booking> bookings = bookingRepository.findBookingsByFilter(filter);
         return bookingMapper.toDtoList(bookings);
     }
 
@@ -118,7 +129,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    public long countBookingsBySession(SessionDTO sessionDTO) {
+    public Long countBookingsBySession(SessionDTO sessionDTO) {
         Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())
                 .orElseThrow(() -> new ModelNotFoundException(String.format(ErrorMessages.SESSION_NOT_FOUND, sessionDTO.getPoolName(), sessionDTO.getStartTime())));
         return bookingRepository.countBySessionId(session.getId());

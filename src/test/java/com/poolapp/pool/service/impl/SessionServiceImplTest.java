@@ -3,19 +3,22 @@ package com.poolapp.pool.service.impl;
 import com.poolapp.pool.dto.SessionDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.exception.NoFreePlacesException;
+import com.poolapp.pool.mapper.PoolMapper;
 import com.poolapp.pool.mapper.SessionMapper;
 import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.Session;
 import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.SessionRepository;
 import com.poolapp.pool.service.PoolService;
+import com.poolapp.pool.util.CapacityOperation;
+import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.Spy;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -26,27 +29,30 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@SpringBootTest
 class SessionServiceImplTest {
 
-    @Mock
+    @MockBean
     private SessionRepository sessionRepository;
 
-    @Mock
+    @MockBean
     private PoolRepository poolRepository;
 
-    @Mock
+    @MockBean
     private PoolService poolService;
 
-    @Spy
+    @Autowired
     private SessionMapper sessionMapper = Mappers.getMapper(SessionMapper.class);
 
-    @InjectMocks
+    @Autowired
+    private PoolMapper poolMapper = Mappers.getMapper(PoolMapper.class);
+
+    @Autowired
     private SessionServiceImpl sessionService;
 
     private Pool pool;
@@ -71,6 +77,8 @@ class SessionServiceImplTest {
         sessionDTO = new SessionDTO();
         sessionDTO.setPoolName("Main Pool");
         sessionDTO.setStartTime(LocalDateTime.of(2025, 6, 27, 10, 0));
+
+
     }
 
     @Test
@@ -82,7 +90,7 @@ class SessionServiceImplTest {
 
         assertNotNull(result);
         assertEquals("Main Pool", result.getPoolName());
-        verify(poolService, times(1)).getPoolByName("Main Pool");
+        verify(poolService, times(2)).getPoolByName("Main Pool");
         verify(sessionRepository, times(1)).save(any());
     }
 
@@ -91,7 +99,11 @@ class SessionServiceImplTest {
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.of(session));
 
-        sessionService.changeSessionCapacity(sessionDTO, -1);
+        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
+        request.setSessionDTO(sessionDTO);
+        request.setOperation(CapacityOperation.DECREASE);
+
+        sessionService.changeSessionCapacity(request);
 
         assertEquals(4, session.getCurrentCapacity());
         verify(sessionRepository, times(1)).save(session);
@@ -103,7 +115,11 @@ class SessionServiceImplTest {
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.of(session));
 
-        assertThrows(NoFreePlacesException.class, () -> sessionService.changeSessionCapacity(sessionDTO, -1));
+        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
+        request.setSessionDTO(sessionDTO);
+        request.setOperation(CapacityOperation.DECREASE);
+
+        assertThrows(NoFreePlacesException.class, () -> sessionService.changeSessionCapacity(request));
         verify(sessionRepository, never()).save(any());
     }
 
@@ -112,7 +128,12 @@ class SessionServiceImplTest {
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.empty());
 
-        assertThrows(ModelNotFoundException.class, () -> sessionService.changeSessionCapacity(sessionDTO, -1));
+        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
+        request.setSessionDTO(sessionDTO);
+        request.setOperation(CapacityOperation.DECREASE);
+
+
+        assertThrows(ModelNotFoundException.class, () -> sessionService.changeSessionCapacity(request));
     }
 
     @Test
@@ -120,8 +141,12 @@ class SessionServiceImplTest {
         when(sessionRepository.findByPoolNameAndStartTime("Main Pool", sessionDTO.getStartTime()))
                 .thenReturn(Optional.of(session));
 
-        sessionService.changeSessionCapacity(sessionDTO, 1);
 
+        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
+        request.setSessionDTO(sessionDTO);
+        request.setOperation(CapacityOperation.INCREASE);
+
+        sessionService.changeSessionCapacity(request);
         assertEquals(6, session.getCurrentCapacity());
         verify(sessionRepository, times(1)).save(session);
     }
@@ -167,7 +192,7 @@ class SessionServiceImplTest {
         sessionResult.setPool(pool);
         sessionResult.setCurrentCapacity(10);
 
-        when(sessionRepository.findSessionsByFilter(eq("Main Pool"), any(), any()))
+        when(sessionRepository.findSessionsByFilter(any(Session.class)))
                 .thenReturn(List.of(sessionResult));
 
         List<SessionDTO> result = sessionService.findSessionsByFilter(sessionDTO);
@@ -179,6 +204,6 @@ class SessionServiceImplTest {
         assertEquals(LocalDateTime.of(2025, 6, 27, 12, 0), dto.getStartTime());
 
         verify(sessionRepository, times(1))
-                .findSessionsByFilter(eq("Main Pool"), any(), any());
+                .findSessionsByFilter(any(Session.class));
     }
 }

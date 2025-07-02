@@ -2,6 +2,7 @@ package com.poolapp.pool.service;
 
 import com.poolapp.pool.dto.SessionDTO;
 import com.poolapp.pool.model.Session;
+import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -11,7 +12,7 @@ public interface SessionService {
 
     SessionDTO createSession(SessionDTO sessionDTO);
 
-    void changeSessionCapacity(SessionDTO sessionDTO, int delta);
+    void changeSessionCapacity(ChangeSessionCapacityRequest request);
 
     List<SessionDTO> findSessionsByFilter(SessionDTO sessionDTO);
 

@@ -3,7 +3,6 @@ package com.poolapp.pool.repository.base.criteria;
 import com.poolapp.pool.model.Booking;
 import com.poolapp.pool.model.BookingId;
 import com.poolapp.pool.model.enums.BookingStatus;
-import com.poolapp.pool.repository.custom.BookingRepositoryCustom;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -19,12 +18,11 @@ import java.util.List;
 
 @Component
 @RequiredArgsConstructor
-public class BookingCriteria implements BookingRepositoryCustom {
+public class BookingCriteria {
 
     private final EntityManager entityManager;
 
 
-    @Override
     public List<Booking> findBookingsByFilter(BookingId bookingId, BookingStatus status, String poolName, LocalDateTime startTime) {
         CriteriaBuilder cb = entityManager.getCriteriaBuilder();
         CriteriaQuery<Booking> query = cb.createQuery(Booking.class);

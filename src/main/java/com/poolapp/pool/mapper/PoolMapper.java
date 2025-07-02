@@ -30,13 +30,4 @@ public interface PoolMapper {
     List<PoolDTO> toDtoList(List<Pool> pools);
 
     PoolDTO toDto(Pool pool);
-
-    default Pool fromName(String name) {
-        if (name == null) {
-            return null;
-        }
-        Pool pool = new Pool();
-        pool.setName(name);
-        return pool;
-    }
 }

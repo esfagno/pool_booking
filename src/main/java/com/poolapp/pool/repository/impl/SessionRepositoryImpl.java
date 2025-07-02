@@ -6,7 +6,6 @@ import com.poolapp.pool.repository.custom.SessionRepositoryCustom;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
@@ -15,8 +14,8 @@ public class SessionRepositoryImpl implements SessionRepositoryCustom {
 
     private final SessionCriteria sessionCriteria;
 
-    public List<Session> findSessionsByFilter(String poolName, LocalDateTime startTime, LocalDateTime endTime) {
-        return sessionCriteria.findSessionsByFilter(poolName, startTime, endTime);
+    public List<Session> findSessionsByFilter(Session filter) {
+        return sessionCriteria.findSessionsByFilter(filter.getPool().getName(), filter.getStartTime(), filter.getEndTime());
     }
 
 }

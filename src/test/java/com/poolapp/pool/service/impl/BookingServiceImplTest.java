@@ -20,6 +20,8 @@ import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.service.MailService;
 import com.poolapp.pool.service.SessionService;
 import com.poolapp.pool.service.UserService;
+import com.poolapp.pool.util.CapacityOperation;
+import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -253,7 +255,11 @@ class BookingServiceImplTest {
 
         bookingService.cancelBooking(bookingDTO);
 
-        verify(sessionService, times(1)).changeSessionCapacity(sessionDTO, 1);
+        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
+        request.setSessionDTO(bookingDTO.getSessionDTO());
+        request.setOperation(CapacityOperation.INCREASE);
+
+        verify(sessionService, times(1)).changeSessionCapacity(request);
         assertEquals(CANCELLED, booking.getStatus());
 
     }
@@ -271,7 +277,7 @@ class BookingServiceImplTest {
 
         assertThrows(NotActiveException.class, () -> bookingService.cancelBooking(bookingDTO));
 
-        verify(sessionService, never()).changeSessionCapacity(any(), anyInt());
+        verify(sessionService, never()).changeSessionCapacity(any());
     }
 
 
@@ -285,13 +291,13 @@ class BookingServiceImplTest {
 
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
         when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn((Optional.of(session)));
-        when(bookingRepository.findBookingsByFilter(any(BookingId.class), any(BookingStatus.class), anyString(), any(LocalDateTime.class))).thenReturn(List.of(booking));
+        when(bookingRepository.findBookingsByFilter(any(Booking.class))).thenReturn(List.of(booking));
         List<BookingDTO> result = bookingService.findBookingsByFilter(bookingDTO);
 
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(bookingDTO.getUserEmail(), result.get(0).getUserEmail());
-        verify(bookingRepository, times(1)).findBookingsByFilter(any(BookingId.class), any(BookingStatus.class), anyString(), any(LocalDateTime.class));
+        verify(bookingRepository, times(1)).findBookingsByFilter(any(Booking.class));
     }
 
     @Test
@@ -303,14 +309,14 @@ class BookingServiceImplTest {
 
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
         when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
-        when(bookingRepository.findBookingsByFilter(any(BookingId.class), any(BookingStatus.class), anyString(), any(LocalDateTime.class))).thenReturn(List.of(booking));
+        when(bookingRepository.findBookingsByFilter(any(Booking.class))).thenReturn(List.of(booking));
         List<BookingDTO> result = bookingService.findBookingsByFilter(bookingDTO);
 
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(BookingStatus.ACTIVE, result.get(0).getStatus());
 
-        verify(bookingRepository, times(1)).findBookingsByFilter(any(BookingId.class), any(BookingStatus.class), anyString(), any(LocalDateTime.class));
+        verify(bookingRepository, times(1)).findBookingsByFilter(any(Booking.class));
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
         verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
     }
@@ -319,17 +325,16 @@ class BookingServiceImplTest {
     void test_findBookingsByFilter_noBookingsFound_shouldReturnEmptyListByDTO() {
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
         when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
-        when(bookingRepository.findBookingsByFilter(any(BookingId.class), any(BookingStatus.class), anyString(), any(LocalDateTime.class))).thenReturn(Collections.emptyList());
+        when(bookingRepository.findBookingsByFilter(any(Booking.class))).thenReturn(Collections.emptyList());
 
         List<BookingDTO> result = bookingService.findBookingsByFilter(bookingDTO);
 
         assertNotNull(result);
         assertEquals(0, result.size());
 
-        verify(bookingRepository, times(1)).findBookingsByFilter(any(BookingId.class), any(BookingStatus.class), anyString(), any(LocalDateTime.class));
+        verify(bookingRepository, times(1)).findBookingsByFilter(any(Booking.class));
     }
 
-    //
     @Test
     void test_updateBooking_shouldUpdateFieldsAndSave() {
         BookingDTO newBookingDTO = new BookingDTO();
