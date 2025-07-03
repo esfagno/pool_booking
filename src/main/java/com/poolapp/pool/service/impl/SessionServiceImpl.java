@@ -7,11 +7,13 @@ import com.poolapp.pool.mapper.SessionMapper;
 import com.poolapp.pool.model.Session;
 import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.SessionRepository;
+import com.poolapp.pool.repository.specification.builder.SessionSpecificationBuilder;
 import com.poolapp.pool.service.PoolService;
 import com.poolapp.pool.service.SessionService;
 import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -26,6 +28,7 @@ public class SessionServiceImpl implements SessionService {
     private final PoolRepository poolRepository;
     private final SessionMapper sessionMapper;
     private final PoolService poolService;
+    private final SessionSpecificationBuilder sessionSpecificationBuilder;
 
     @Override
     public Optional<Session> getSessionByPoolNameAndStartTime(String poolName, LocalDateTime startTime) {
@@ -34,8 +37,8 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public boolean validateSessionHasAvailableSpots(SessionDTO sessionDTO) {
-        Session session = getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.SESSION_NOT_FOUND + sessionDTO.getPoolName() + " at time: " + sessionDTO.getStartTime()));
+        Session session = getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.SESSION_NOT_FOUND + sessionDTO.getPoolDTO().getName() + " at time: " + sessionDTO.getStartTime()));
 
         if (session.getCurrentCapacity() <= 0) {
             throw new NoFreePlacesException(ErrorMessages.NO_FREE_PLACES);
@@ -46,7 +49,6 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public SessionDTO createSession(SessionDTO sessionDTO) {
         Session session = sessionMapper.toEntity(sessionDTO);
-        sessionMapper.setPoolFromName(sessionDTO, session, poolService);
         Session saved = sessionRepository.save(session);
         return sessionMapper.toDto(saved);
     }
@@ -55,7 +57,7 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public void changeSessionCapacity(ChangeSessionCapacityRequest request) {
         SessionDTO sessionDTO = request.getSessionDTO();
-        Session session = getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())
+        Session session = getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())
                 .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.SESSION_NOT_FOUND));
 
         int newCapacity = switch (request.getOperation()) {
@@ -75,8 +77,8 @@ public class SessionServiceImpl implements SessionService {
     @Override
     public List<SessionDTO> findSessionsByFilter(SessionDTO filterDTO) {
         Session filter = sessionMapper.toEntity(filterDTO);
-        sessionMapper.setPoolFromName(filterDTO, filter, poolService);
-        return sessionRepository.findSessionsByFilter(filter)
+        Specification<Session> spec = sessionSpecificationBuilder.buildSpecification(filter);
+        return sessionRepository.findAll(spec)
                 .stream()
                 .map(sessionMapper::toDto)
                 .toList();

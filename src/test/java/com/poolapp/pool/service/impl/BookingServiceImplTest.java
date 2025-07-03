@@ -1,10 +1,12 @@
 package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.BookingDTO;
+import com.poolapp.pool.dto.PoolDTO;
 import com.poolapp.pool.dto.SessionDTO;
+import com.poolapp.pool.exception.BookingAlreadyActiveException;
+import com.poolapp.pool.exception.BookingStatusNotActiveException;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.exception.NoFreePlacesException;
-import com.poolapp.pool.exception.NotActiveException;
 import com.poolapp.pool.mapper.BookingMapper;
 import com.poolapp.pool.mapper.SessionMapper;
 import com.poolapp.pool.model.Booking;
@@ -28,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
@@ -93,6 +96,7 @@ class BookingServiceImplTest {
     private Session session;
     private Booking booking;
     private Pool pool;
+    private PoolDTO poolDTO;
 
     @BeforeEach
     void setUp() {
@@ -103,6 +107,9 @@ class BookingServiceImplTest {
 
         pool = new Pool();
         pool.setName("Main Pool");
+
+        poolDTO = new PoolDTO();
+        poolDTO.setName("Main Pool");
 
         session = new Session();
         session.setId(10);
@@ -116,7 +123,7 @@ class BookingServiceImplTest {
         bookingDTO.setStatus(ACTIVE);
 
         sessionDTO = new SessionDTO();
-        sessionDTO.setPoolName("Main Pool");
+        sessionDTO.setPoolDTO(poolDTO);
         sessionDTO.setStartTime(LocalDateTime.of(2025, 6, 30, 18, 0));
 
         bookingDTO.setSessionDTO(sessionDTO);
@@ -133,7 +140,7 @@ class BookingServiceImplTest {
     @Test
     void test_createBooking_success() {
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
         when(userService.hasActiveBooking(eq(bookingDTO.getUserEmail()), any(LocalDateTime.class))).thenReturn(false);
         when(sessionService.validateSessionHasAvailableSpots(sessionDTO)).thenReturn(true);
         when(bookingRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -144,7 +151,7 @@ class BookingServiceImplTest {
         verify(bookingRepository, times(1)).save(any());
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
         verify(userService, times(1)).hasActiveBooking(eq(bookingDTO.getUserEmail()), any(LocalDateTime.class));
-        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
         verify(sessionService, times(1)).validateSessionHasAvailableSpots(sessionDTO);
     }
 
@@ -163,12 +170,12 @@ class BookingServiceImplTest {
     @Test
     void test_createBooking_sessionNotFound_shouldThrowException() {
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.empty());
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.empty());
 
         assertThrows(ModelNotFoundException.class, () -> bookingService.createBooking(bookingDTO));
 
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
-        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
         verifyNoMoreInteractions(sessionService);
         verifyNoInteractions(bookingRepository);
     }
@@ -179,13 +186,13 @@ class BookingServiceImplTest {
         when(bookingRepository.existsByUserIdAndSessionStartTimeAfter(anyInt(), any())).thenReturn(true);
 
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
         when(userService.hasActiveBooking(eq(bookingDTO.getUserEmail()), any(LocalDateTime.class))).thenReturn(true);
 
-        assertThrows(NotActiveException.class, () -> bookingService.createBooking(bookingDTO));
+        assertThrows(BookingAlreadyActiveException.class, () -> bookingService.createBooking(bookingDTO));
 
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
-        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
         verify(userService, times(1)).hasActiveBooking(eq(bookingDTO.getUserEmail()), any(LocalDateTime.class));
         verify(bookingRepository, never()).save(any());
     }
@@ -193,14 +200,14 @@ class BookingServiceImplTest {
     @Test
     void test_createBooking_noAvailableSpots_shouldThrowException() {
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
         when(userService.hasActiveBooking(eq(bookingDTO.getUserEmail()), any(LocalDateTime.class))).thenReturn(false);
         doThrow(new NoFreePlacesException("No available spots")).when(sessionService).validateSessionHasAvailableSpots(sessionDTO);
 
         assertThrows(NoFreePlacesException.class, () -> bookingService.createBooking(bookingDTO));
 
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
-        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
         verify(userService, times(1)).hasActiveBooking(eq(bookingDTO.getUserEmail()), any(LocalDateTime.class));
         verify(sessionService, times(1)).validateSessionHasAvailableSpots(sessionDTO);
         verify(bookingRepository, never()).save(any());
@@ -210,12 +217,12 @@ class BookingServiceImplTest {
     @Test
     void test_deleteBooking_success() {
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
 
         bookingService.deleteBooking(bookingDTO);
 
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
-        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
         verify(bookingRepository, times(1)).deleteById(new BookingId(user.getId(), session.getId()));
     }
 
@@ -233,12 +240,12 @@ class BookingServiceImplTest {
     @Test
     void test_deleteBooking_sessionNotFound_shouldThrowException() {
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.empty());
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.empty());
 
         assertThrows(ModelNotFoundException.class, () -> bookingService.deleteBooking(bookingDTO));
 
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
-        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
         verify(bookingRepository, never()).deleteById(any());
     }
 
@@ -250,7 +257,7 @@ class BookingServiceImplTest {
         BookingId bookingId = new BookingId(user.getId(), session.getId());
 
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
         when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
 
         bookingService.cancelBooking(bookingDTO);
@@ -272,10 +279,10 @@ class BookingServiceImplTest {
         BookingId bookingId = new BookingId(user.getId(), session.getId());
 
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
         when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
 
-        assertThrows(NotActiveException.class, () -> bookingService.cancelBooking(bookingDTO));
+        assertThrows(BookingStatusNotActiveException.class, () -> bookingService.cancelBooking(bookingDTO));
 
         verify(sessionService, never()).changeSessionCapacity(any());
     }
@@ -290,14 +297,14 @@ class BookingServiceImplTest {
         booking.setStatus(BookingStatus.ACTIVE);
 
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn((Optional.of(session)));
-        when(bookingRepository.findBookingsByFilter(any(Booking.class))).thenReturn(List.of(booking));
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn((Optional.of(session)));
+        when(bookingRepository.findAll(any(Specification.class))).thenReturn(List.of(booking));
         List<BookingDTO> result = bookingService.findBookingsByFilter(bookingDTO);
 
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(bookingDTO.getUserEmail(), result.get(0).getUserEmail());
-        verify(bookingRepository, times(1)).findBookingsByFilter(any(Booking.class));
+        when(bookingRepository.findAll(any(Specification.class))).thenReturn(List.of(booking));
     }
 
     @Test
@@ -308,31 +315,31 @@ class BookingServiceImplTest {
         booking1.setSession(session);
 
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
-        when(bookingRepository.findBookingsByFilter(any(Booking.class))).thenReturn(List.of(booking));
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(bookingRepository.findAll(any(Specification.class))).thenReturn(List.of(booking));
         List<BookingDTO> result = bookingService.findBookingsByFilter(bookingDTO);
 
         assertNotNull(result);
         assertEquals(1, result.size());
         assertEquals(BookingStatus.ACTIVE, result.get(0).getStatus());
 
-        verify(bookingRepository, times(1)).findBookingsByFilter(any(Booking.class));
+        verify(bookingRepository, times(1)).findAll(any(Specification.class));
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
-        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime());
+        verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
     }
 
     @Test
     void test_findBookingsByFilter_noBookingsFound_shouldReturnEmptyListByDTO() {
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
-        when(bookingRepository.findBookingsByFilter(any(Booking.class))).thenReturn(Collections.emptyList());
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(bookingRepository.findAll(any(Specification.class))).thenReturn(Collections.emptyList());
 
         List<BookingDTO> result = bookingService.findBookingsByFilter(bookingDTO);
 
         assertNotNull(result);
         assertEquals(0, result.size());
 
-        verify(bookingRepository, times(1)).findBookingsByFilter(any(Booking.class));
+        verify(bookingRepository, times(1)).findAll(any(Specification.class));
     }
 
     @Test
@@ -340,14 +347,16 @@ class BookingServiceImplTest {
         BookingDTO newBookingDTO = new BookingDTO();
         newBookingDTO.setUserEmail(bookingDTO.getUserEmail());
         SessionDTO newSessionDTO = new SessionDTO();
-        newSessionDTO.setPoolName("Updated Pool");
+        PoolDTO newPoolDTO = new PoolDTO();
+        newPoolDTO.setName("Updated Pool");
+        newSessionDTO.setPoolDTO(newPoolDTO);
         newSessionDTO.setStartTime(LocalDateTime.of(2025, 7, 1, 18, 0));
         newBookingDTO.setSessionDTO(newSessionDTO);
 
         BookingId bookingId = new BookingId(user.getId(), session.getId());
 
         when(userService.findUserByEmail(newBookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(newSessionDTO.getPoolName(), newSessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(sessionService.getSessionByPoolNameAndStartTime(newSessionDTO.getPoolDTO().getName(), newSessionDTO.getStartTime())).thenReturn(Optional.of(session));
         when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(sessionService.getSessionByPoolNameAndStartTime(anyString(), any(LocalDateTime.class)))
@@ -369,7 +378,7 @@ class BookingServiceImplTest {
         BookingId bookingId = new BookingId(user.getId(), session.getId());
 
         when(userService.findUserByEmail(newBookingDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
+        when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
         when(bookingRepository.findById(bookingId)).thenReturn(Optional.empty());
 
         assertThrows(ModelNotFoundException.class, () -> bookingService.updateBooking(bookingDTO, newBookingDTO));
@@ -419,7 +428,7 @@ class BookingServiceImplTest {
         Session mockSession = new Session();
         mockSession.setId(99);
 
-        when(sessionService.getSessionByPoolNameAndStartTime(dto.getPoolName(), dto.getStartTime())).thenReturn(Optional.of(mockSession));
+        when(sessionService.getSessionByPoolNameAndStartTime(dto.getPoolDTO().getName(), dto.getStartTime())).thenReturn(Optional.of(mockSession));
 
         bookingService.deleteBookingsBySession(dto);
 
@@ -432,7 +441,7 @@ class BookingServiceImplTest {
         Session mockSession = new Session();
         mockSession.setId(123);
 
-        when(sessionService.getSessionByPoolNameAndStartTime(dto.getPoolName(), dto.getStartTime())).thenReturn(Optional.of(mockSession));
+        when(sessionService.getSessionByPoolNameAndStartTime(dto.getPoolDTO().getName(), dto.getStartTime())).thenReturn(Optional.of(mockSession));
         when(bookingRepository.countBySessionId(123)).thenReturn(7L);
 
         long count = bookingService.countBookingsBySession(dto);

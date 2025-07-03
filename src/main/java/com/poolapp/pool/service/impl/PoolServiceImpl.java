@@ -9,9 +9,11 @@ import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.PoolSchedule;
 import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.PoolScheduleRepository;
+import com.poolapp.pool.repository.specification.builder.PoolSpecificationBuilder;
 import com.poolapp.pool.service.PoolService;
 import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,6 +26,7 @@ public class PoolServiceImpl implements PoolService {
     private final PoolScheduleRepository scheduleRepository;
     private final PoolMapper poolMapper;
     private final PoolScheduleMapper poolScheduleMapper;
+    private final PoolSpecificationBuilder poolSpecificationBuilder;
 
 
     @Override
@@ -43,12 +46,9 @@ public class PoolServiceImpl implements PoolService {
 
     @Override
     public List<PoolDTO> searchPools(PoolDTO filterDto) {
-
-        List<Pool> pools = poolRepository.searchPoolByFilter(filterDto.getName(),
-                filterDto.getAddress(),
-                filterDto.getDescription(),
-                filterDto.getMaxCapacity(),
-                filterDto.getSessionDurationMinutes());
+        Pool filter = poolMapper.toEntity(filterDto);
+        Specification<Pool> spec = poolSpecificationBuilder.buildSpecification(filter);
+        List<Pool> pools = poolRepository.findAll(spec);
         return poolMapper.toDtoList(pools);
     }
 

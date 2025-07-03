@@ -1,9 +1,9 @@
 package com.poolapp.pool.dto;
 
 import com.poolapp.pool.validation.EndTimeAfterStartTime;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,9 +18,9 @@ import java.time.LocalDateTime;
 @EndTimeAfterStartTime
 public class SessionDTO {
 
+    @Valid
     @NotBlank
-    @Size(max = 255)
-    private String poolName;
+    private PoolDTO poolDTO;
 
     @NotNull
     private LocalDateTime startTime;

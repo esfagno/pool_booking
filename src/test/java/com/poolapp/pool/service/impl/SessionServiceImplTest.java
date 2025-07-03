@@ -1,5 +1,6 @@
 package com.poolapp.pool.service.impl;
 
+import com.poolapp.pool.dto.PoolDTO;
 import com.poolapp.pool.dto.SessionDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.exception.NoFreePlacesException;
@@ -19,6 +20,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -58,6 +60,7 @@ class SessionServiceImplTest {
     private Pool pool;
     private Session session;
     private SessionDTO sessionDTO;
+    private PoolDTO poolDTO;
 
     @BeforeEach
     void setUp() {
@@ -68,6 +71,9 @@ class SessionServiceImplTest {
         pool.setName("Main Pool");
         pool.setMaxCapacity(20);
 
+        poolDTO = new PoolDTO();
+        poolDTO.setName("Main Pool");
+
         session = new Session();
         session.setId(1);
         session.setPool(pool);
@@ -75,7 +81,7 @@ class SessionServiceImplTest {
         session.setCurrentCapacity(5);
 
         sessionDTO = new SessionDTO();
-        sessionDTO.setPoolName("Main Pool");
+        sessionDTO.setPoolDTO(poolDTO);
         sessionDTO.setStartTime(LocalDateTime.of(2025, 6, 27, 10, 0));
 
 
@@ -89,8 +95,7 @@ class SessionServiceImplTest {
         SessionDTO result = sessionService.createSession(sessionDTO);
 
         assertNotNull(result);
-        assertEquals("Main Pool", result.getPoolName());
-        verify(poolService, times(2)).getPoolByName("Main Pool");
+        assertEquals("Main Pool", result.getPoolDTO().getName());
         verify(sessionRepository, times(1)).save(any());
     }
 
@@ -192,7 +197,7 @@ class SessionServiceImplTest {
         sessionResult.setPool(pool);
         sessionResult.setCurrentCapacity(10);
 
-        when(sessionRepository.findSessionsByFilter(any(Session.class)))
+        when(sessionRepository.findAll(any(Specification.class)))
                 .thenReturn(List.of(sessionResult));
 
         List<SessionDTO> result = sessionService.findSessionsByFilter(sessionDTO);
@@ -200,10 +205,10 @@ class SessionServiceImplTest {
         assertNotNull(result);
         assertEquals(1, result.size());
         SessionDTO dto = result.get(0);
-        assertEquals("Main Pool", dto.getPoolName());
+        assertEquals("Main Pool", dto.getPoolDTO().getName());
         assertEquals(LocalDateTime.of(2025, 6, 27, 12, 0), dto.getStartTime());
 
         verify(sessionRepository, times(1))
-                .findSessionsByFilter(any(Session.class));
+                .findAll(any(Specification.class));
     }
 }

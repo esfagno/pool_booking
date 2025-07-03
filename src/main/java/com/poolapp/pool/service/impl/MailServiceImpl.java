@@ -27,7 +27,7 @@ public class MailServiceImpl implements MailService {
         message.setTo(toEmail);
         message.setSubject(bookingConfirmationSubject);
         message.setText(String.format(bookingConfirmationBody,
-                sessionDTO.getPoolName(),
+                sessionDTO.getPoolDTO().getName(),
                 sessionDTO.getStartTime().toString()));
         javaMailSender.send(message);
     }

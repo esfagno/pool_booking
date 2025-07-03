@@ -9,12 +9,6 @@ public class EndTimeAfterStartTimeValidator implements ConstraintValidator<EndTi
 
     @Override
     public boolean isValid(SessionDTO dto, ConstraintValidatorContext context) {
-        if (dto == null) {
-            return true;
-        }
-        if (dto.getStartTime() == null || dto.getEndTime() == null) {
-            return true;
-        }
         return dto.getEndTime().isAfter(dto.getStartTime());
     }
 }
