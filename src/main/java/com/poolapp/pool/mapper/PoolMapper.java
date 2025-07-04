@@ -30,6 +30,4 @@ public interface PoolMapper {
     List<PoolDTO> toDtoList(List<Pool> pools);
 
     PoolDTO toDto(Pool pool);
-
-
 }

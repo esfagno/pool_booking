@@ -9,6 +9,7 @@ import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.PoolSchedule;
 import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.PoolScheduleRepository;
+import com.poolapp.pool.repository.specification.builder.PoolSpecificationBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mapstruct.factory.Mappers;
@@ -16,6 +17,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalTime;
 import java.util.List;
@@ -36,6 +38,9 @@ class PoolServiceImplTest {
 
     @Mock
     private PoolScheduleRepository scheduleRepository;
+
+    @Spy
+    private PoolSpecificationBuilder poolSpecificationBuilder;
 
     @Spy
     private PoolMapper poolMapper = Mappers.getMapper(PoolMapper.class);
@@ -105,7 +110,7 @@ class PoolServiceImplTest {
     @Test
     void test_searchPools_shouldFilterByName() {
         PoolDTO filterDto = PoolDTO.builder().name("main").build();
-        when(poolRepository.searchPoolByFilter("main", null, null, null, null)).thenReturn(List.of(pool));
+        when(poolRepository.findAll(any(Specification.class))).thenReturn(List.of(pool));
 
         List<PoolDTO> result = poolService.searchPools(filterDto);
 
@@ -116,7 +121,7 @@ class PoolServiceImplTest {
     @Test
     void test_searchPools_shouldFilterByMultipleFields() {
         PoolDTO filterDto = PoolDTO.builder().name("main").address("Some Address").maxCapacity(20).sessionDurationMinutes(60).build();
-        when(poolRepository.searchPoolByFilter("main", "Some Address", null, 20, 60)).thenReturn(List.of(pool));
+        when(poolRepository.findAll(any(Specification.class))).thenReturn(List.of(pool));
 
         List<PoolDTO> result = poolService.searchPools(filterDto);
 
@@ -127,7 +132,7 @@ class PoolServiceImplTest {
     @Test
     void test_searchPools_shouldReturnAllIfNoFilter() {
         PoolDTO filterDto = PoolDTO.builder().build();
-        when(poolRepository.searchPoolByFilter(null, null, null, null, null)).thenReturn(List.of(pool));
+        when(poolRepository.findAll(any(Specification.class))).thenReturn(List.of(pool));
 
         List<PoolDTO> result = poolService.searchPools(filterDto);
 
