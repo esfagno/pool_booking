@@ -11,9 +11,12 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -24,7 +27,8 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 
 @Entity
-@Table(name = "subscription")
+@Table(name = "subscription",
+        uniqueConstraints = @UniqueConstraint(columnNames = {"subscription_type_id", "status"}))
 public class Subscription {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,7 +39,8 @@ public class Subscription {
     private SubscriptionType subscriptionType;
 
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
+    @Column(name = "status", columnDefinition = "subscription_status", nullable = false)
+    @JdbcTypeCode(SqlTypes.CHAR)
     private SubscriptionStatus status;
 
     @CreatedDate

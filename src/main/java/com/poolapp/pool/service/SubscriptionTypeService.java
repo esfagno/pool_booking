@@ -5,9 +5,7 @@ import com.poolapp.pool.dto.SubscriptionTypeDTO;
 import java.util.List;
 
 public interface SubscriptionTypeService {
-    /*
-    круды, update, delete, search,
-     */
+
     SubscriptionTypeDTO createSubscriptionType(SubscriptionTypeDTO subscriptionTypeDTO);
 
     SubscriptionTypeDTO updateSubscriptionType(SubscriptionTypeDTO subscriptionTypeDTO);

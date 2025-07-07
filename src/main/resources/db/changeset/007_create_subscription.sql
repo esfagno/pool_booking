@@ -4,5 +4,6 @@ CREATE TABLE subscription
     subscription_type_id INTEGER REFERENCES subscription_type (id),
     status               subscription_status NOT NULL,
     created_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    updated_at           TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT uk_subscription_type_status UNIQUE (subscription_type_id, status)
 );

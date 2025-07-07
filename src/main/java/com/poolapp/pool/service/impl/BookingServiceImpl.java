@@ -2,24 +2,29 @@ package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.BookingDTO;
 import com.poolapp.pool.dto.SessionDTO;
-import com.poolapp.pool.exception.BookingAlreadyActiveException;
 import com.poolapp.pool.exception.BookingStatusNotActiveException;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.mapper.BookingMapper;
+import com.poolapp.pool.mapper.UserSubscriptionMapper;
 import com.poolapp.pool.model.Booking;
 import com.poolapp.pool.model.BookingId;
 import com.poolapp.pool.model.Session;
 import com.poolapp.pool.model.User;
+import com.poolapp.pool.model.UserSubscription;
 import com.poolapp.pool.model.enums.BookingStatus;
+import com.poolapp.pool.model.enums.SubscriptionStatus;
 import com.poolapp.pool.repository.BookingRepository;
 import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.SessionRepository;
+import com.poolapp.pool.repository.SubscriptionRepository;
 import com.poolapp.pool.repository.UserRepository;
+import com.poolapp.pool.repository.UserSubscriptionRepository;
 import com.poolapp.pool.repository.specification.builder.BookingSpecificationBuilder;
 import com.poolapp.pool.service.BookingService;
 import com.poolapp.pool.service.MailService;
 import com.poolapp.pool.service.SessionService;
 import com.poolapp.pool.service.UserService;
+import com.poolapp.pool.service.UserSubscriptionService;
 import com.poolapp.pool.util.CapacityOperation;
 import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 import com.poolapp.pool.util.ErrorMessages;
@@ -30,6 +35,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -44,56 +50,90 @@ public class BookingServiceImpl implements BookingService {
     private final SessionService sessionService;
     private final MailService mailService;
     private final BookingSpecificationBuilder bookingSpecificationBuilder;
+    private final UserSubscriptionRepository userSubscriptionRepository;
+    private final UserSubscriptionService userSubscriptionService;
+    private final UserSubscriptionMapper userSubscriptionMapper;
+    private final SubscriptionRepository subscriptionRepository;
 
 
     @Transactional
     @Override
     public BookingDTO createBooking(BookingDTO bookingDTO) {
-
-//I will add the subscription implementation later and add and I’ll add the subscription logic here
-
         BookingId bookingId = buildBookingId(bookingDTO);
-        if (userService.hasActiveBooking(bookingDTO.getUserEmail(), LocalDateTime.now())) {
-            throw new BookingAlreadyActiveException(ErrorMessages.ALREADY_ACTIVE);
-        }
+
+        Optional<UserSubscription> maybeSubscription = userSubscriptionService.validateUserSubscription(bookingDTO.getUserEmail());
+
         sessionService.validateSessionHasAvailableSpots(bookingDTO.getSessionDTO());
 
         Booking booking = bookingMapper.toEntity(bookingDTO);
         booking.setId(bookingId);
-
         Booking saved = bookingRepository.save(booking);
+
+        maybeSubscription.ifPresent(subscription -> {
+            subscription.setRemainingBookings(subscription.getRemainingBookings() - 1);
+            userSubscriptionRepository.save(subscription);
+        });
+
         ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
         request.setSessionDTO(bookingDTO.getSessionDTO());
         request.setOperation(CapacityOperation.DECREASE);
         sessionService.changeSessionCapacity(request);
+
         mailService.sendBookingConfirmationEmail(bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
 
         return bookingMapper.toDto(saved);
     }
 
+
     @Transactional
     @Override
     public void deleteBooking(BookingDTO bookingDTO) {
-        bookingRepository.deleteById(buildBookingId(bookingDTO));
+        BookingId bookingId = buildBookingId(bookingDTO);
+        Booking booking = bookingRepository.findById(bookingId)
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.BOOKING_NOT_FOUND));
+        bookingRepository.deleteById(bookingId);
+        userSubscriptionRepository.findByUserEmailAndSubscriptionStatusAndRemainingBookingsGreaterThanNative(
+                bookingDTO.getUserEmail(),
+                SubscriptionStatus.ACTIVE.name(),
+                0
+        ).ifPresent(userSubscription -> {
+            userSubscription.setRemainingBookings(userSubscription.getRemainingBookings() + 1);
+            userSubscriptionRepository.save(userSubscription);
+        });
         ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
         request.setSessionDTO(bookingDTO.getSessionDTO());
         request.setOperation(CapacityOperation.INCREASE);
         sessionService.changeSessionCapacity(request);
     }
 
+
     @Transactional
     @Override
     public void cancelBooking(BookingDTO bookingDTO) {
         Booking booking = findBookingByDTO(bookingDTO);
-        switch (booking.getStatus()) {
-            case ACTIVE -> booking.setStatus(BookingStatus.CANCELLED);
-            default -> throw new BookingStatusNotActiveException(ErrorMessages.WRONG_STATUS + booking.getStatus());
+
+        if (booking.getStatus() != BookingStatus.ACTIVE) {
+            throw new BookingStatusNotActiveException(ErrorMessages.WRONG_STATUS + booking.getStatus());
         }
+
+        booking.setStatus(BookingStatus.CANCELLED);
+
         ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
         request.setSessionDTO(bookingDTO.getSessionDTO());
         request.setOperation(CapacityOperation.INCREASE);
         sessionService.changeSessionCapacity(request);
+
+        userSubscriptionRepository.findByUserEmailAndSubscriptionStatusAndRemainingBookingsGreaterThanNative(
+                bookingDTO.getUserEmail(),
+                SubscriptionStatus.ACTIVE.name(),
+                0
+        ).ifPresent(userSubscription -> {
+            userSubscription.setRemainingBookings(userSubscription.getRemainingBookings() + 1);
+            userSubscriptionRepository.save(userSubscription);
+        });
+        bookingRepository.save(booking);
     }
+
 
     @Override
     public List<BookingDTO> findBookingsByFilter(BookingDTO filterDTO) {
