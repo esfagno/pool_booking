@@ -12,11 +12,12 @@ import com.poolapp.pool.repository.PoolScheduleRepository;
 import com.poolapp.pool.repository.specification.builder.PoolSpecificationBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalTime;
@@ -31,6 +32,7 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class PoolServiceImplTest {
 
     @Mock
@@ -58,7 +60,6 @@ class PoolServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
 
         pool = new Pool();
         pool.setId(1);

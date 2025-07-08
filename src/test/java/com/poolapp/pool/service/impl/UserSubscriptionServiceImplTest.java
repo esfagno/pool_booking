@@ -20,11 +20,12 @@ import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.util.ErrorMessages;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
@@ -45,6 +46,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+@ExtendWith(MockitoExtension.class)
 class UserSubscriptionServiceImplTest {
 
     @Spy
@@ -76,8 +78,6 @@ class UserSubscriptionServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
-
         userSubscriptionDTO = new UserSubscriptionDTO();
         userSubscriptionDTO.setUserEmail("test@example.com");
 
@@ -262,8 +262,6 @@ class UserSubscriptionServiceImplTest {
 
         when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscriptionForTest.getId())).thenReturn(Optional.of(entity));
 
-        when(userSubscriptionMapper.toEntity(userSubscriptionDTO)).thenReturn(entity);
-
         boolean expired = service.isUserSubscriptionExpired(userSubscriptionDTO, LocalDateTime.now());
 
         assertTrue(expired);
@@ -301,7 +299,6 @@ class UserSubscriptionServiceImplTest {
 
         when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscriptionForTest.getId())).thenReturn(Optional.of(entity));
 
-        when(userSubscriptionMapper.toEntity(userSubscriptionDTO)).thenReturn(entity);
         boolean expired = service.isUserSubscriptionExpired(userSubscriptionDTO, LocalDateTime.now());
 
         assertFalse(expired);
@@ -339,7 +336,6 @@ class UserSubscriptionServiceImplTest {
 
         when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscriptionForTest.getId())).thenReturn(Optional.of(entity));
 
-        when(userSubscriptionMapper.toEntity(userSubscriptionDTO)).thenReturn(entity);
         boolean expired = service.isUserSubscriptionExpired(userSubscriptionDTO, LocalDateTime.now());
         assertTrue(expired);
     }
