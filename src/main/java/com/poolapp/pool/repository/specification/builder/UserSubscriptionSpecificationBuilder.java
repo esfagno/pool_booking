@@ -2,6 +2,7 @@ package com.poolapp.pool.repository.specification.builder;
 
 import com.poolapp.pool.model.UserSubscription;
 import com.poolapp.pool.model.enums.SubscriptionStatus;
+import com.poolapp.pool.repository.specification.UserSubscriptionSpecification;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
@@ -39,5 +40,11 @@ public class UserSubscriptionSpecificationBuilder {
         }
 
         return spec;
+    }
+
+    public Specification<UserSubscription> activeWithRemainingBookingsAndUserEmail(String userEmail, int minRemainingBookings) {
+        return Specification.where(UserSubscriptionSpecification.hasUserEmail(userEmail))
+                .and(UserSubscriptionSpecification.hasSubscriptionStatus(SubscriptionStatus.ACTIVE))
+                .and(UserSubscriptionSpecification.hasRemainingBookingsGreaterThan(minRemainingBookings));
     }
 }

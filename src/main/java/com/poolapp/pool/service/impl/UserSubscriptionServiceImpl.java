@@ -8,10 +8,10 @@ import com.poolapp.pool.mapper.UserSubscriptionMapper;
 import com.poolapp.pool.model.Subscription;
 import com.poolapp.pool.model.User;
 import com.poolapp.pool.model.UserSubscription;
-import com.poolapp.pool.model.enums.SubscriptionStatus;
 import com.poolapp.pool.repository.SubscriptionRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.UserSubscriptionRepository;
+import com.poolapp.pool.repository.specification.UserSubscriptionSpecification;
 import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecificationBuilder;
 import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.service.UserSubscriptionService;
@@ -82,22 +82,19 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
     @Override
     public boolean isUserSubscriptionExpired(UserSubscriptionDTO userSubscriptionDTO, LocalDateTime now) {
-        UserSubscription filter = userSubscriptionMapper.toEntity(userSubscriptionDTO);
-        if (filter.getSubscription().getStatus() != SubscriptionStatus.ACTIVE) {
-            return false;
-        }
+        UserSubscription filter = findUserSubscriptionByDTO(userSubscriptionDTO)
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_SUBSCRIPTION_NOT_FOUND));
         LocalDateTime expirationDate = filter.getAssignedAt()
                 .plusDays(filter.getSubscription().getSubscriptionType().getDurationDays());
         return expirationDate.isBefore(now);
     }
 
-    @Override
     public Optional<UserSubscription> validateUserSubscription(String userEmail) {
-        Optional<UserSubscription> maybeSubscription = userSubscriptionRepository
-                .findByUserEmailAndSubscriptionStatusAndRemainingBookingsGreaterThanNative(
-                        userEmail,
-                        SubscriptionStatus.ACTIVE.name(),
-                        0);
+        Specification<UserSubscription> spec = UserSubscriptionSpecification
+                .isActiveAndHasRemainingBookings(0)
+                .and(UserSubscriptionSpecification.hasUserEmail(userEmail));
+
+        Optional<UserSubscription> maybeSubscription = userSubscriptionRepository.findOne(spec);
 
         if (maybeSubscription.isEmpty()) {
             if (userService.hasActiveBooking(userEmail, LocalDateTime.now())) {
@@ -109,6 +106,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                 throw new UserSubscriptionExpiredException(ErrorMessages.USER_SUBSCRIPTION_EXPIRED);
             }
         }
+
         return maybeSubscription;
     }
 

@@ -3,7 +3,9 @@ package com.poolapp.pool.service.impl;
 import com.poolapp.pool.dto.SubscriptionDTO;
 import com.poolapp.pool.dto.SubscriptionTypeDTO;
 import com.poolapp.pool.dto.UserSubscriptionDTO;
+import com.poolapp.pool.exception.BookingAlreadyActiveException;
 import com.poolapp.pool.exception.ModelNotFoundException;
+import com.poolapp.pool.exception.UserSubscriptionExpiredException;
 import com.poolapp.pool.mapper.UserSubscriptionMapper;
 import com.poolapp.pool.model.Subscription;
 import com.poolapp.pool.model.SubscriptionType;
@@ -14,6 +16,7 @@ import com.poolapp.pool.repository.SubscriptionRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.UserSubscriptionRepository;
 import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecificationBuilder;
+import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.util.ErrorMessages;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +24,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.springframework.data.jpa.domain.Specification;
 
 import java.time.LocalDateTime;
@@ -30,16 +34,20 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class UserSubscriptionServiceImplTest {
 
+    @Spy
     @InjectMocks
     private UserSubscriptionServiceImpl service;
 
@@ -57,6 +65,9 @@ class UserSubscriptionServiceImplTest {
 
     @Mock
     private UserSubscriptionSpecificationBuilder userSubscriptionSpecificationBuilder;
+
+    @Mock
+    private UserService userService;
 
     private UserSubscriptionDTO userSubscriptionDTO;
     private User user;
@@ -106,10 +117,7 @@ class UserSubscriptionServiceImplTest {
         UserSubscriptionDTO savedDto = new UserSubscriptionDTO();
 
         when(userRepository.findByEmail(userSubscriptionDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(
-                userSubscriptionDTO.getSubscriptionDTO().getStatus(),
-                userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName()))
-                .thenReturn(Optional.of(subscription));
+        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName())).thenReturn(Optional.of(subscription));
         when(userSubscriptionMapper.toEntity(userSubscriptionDTO)).thenReturn(entity);
         when(userSubscriptionRepository.save(any(UserSubscription.class))).thenReturn(saved);
         when(userSubscriptionMapper.toDto(saved)).thenReturn(savedDto);
@@ -118,9 +126,7 @@ class UserSubscriptionServiceImplTest {
 
         assertNotNull(result);
         verify(userRepository).findByEmail(userSubscriptionDTO.getUserEmail());
-        verify(subscriptionRepository).findByStatusAndSubscriptionType_Name(
-                userSubscriptionDTO.getSubscriptionDTO().getStatus(),
-                userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName());
+        verify(subscriptionRepository).findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName());
         verify(userSubscriptionMapper).toEntity(userSubscriptionDTO);
         verify(userSubscriptionRepository).save(entity);
         verify(userSubscriptionMapper).toDto(saved);
@@ -132,36 +138,25 @@ class UserSubscriptionServiceImplTest {
     void createUserSubscription_userNotFound_throwsException() {
         when(userRepository.findByEmail(userSubscriptionDTO.getUserEmail())).thenReturn(Optional.empty());
 
-        ModelNotFoundException ex = assertThrows(ModelNotFoundException.class,
-                () -> service.createUserSubscription(userSubscriptionDTO));
+        ModelNotFoundException ex = assertThrows(ModelNotFoundException.class, () -> service.createUserSubscription(userSubscriptionDTO));
         assertEquals(ErrorMessages.USER_NOT_FOUND, ex.getMessage());
     }
 
     @Test
     void createUserSubscription_subscriptionNotFound_throwsException() {
         when(userRepository.findByEmail(userSubscriptionDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(
-                userSubscriptionDTO.getSubscriptionDTO().getStatus(),
-                userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName()))
-                .thenReturn(Optional.empty());
+        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName())).thenReturn(Optional.empty());
 
-        ModelNotFoundException ex = assertThrows(ModelNotFoundException.class,
-                () -> service.createUserSubscription(userSubscriptionDTO));
+        ModelNotFoundException ex = assertThrows(ModelNotFoundException.class, () -> service.createUserSubscription(userSubscriptionDTO));
         assertEquals(ErrorMessages.SUBSCRIPTION_NOT_FOUND, ex.getMessage());
     }
 
 
     @Test
     void updateUserSubscription_success() {
-        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(
-                userSubscriptionDTO.getSubscriptionDTO().getStatus(),
-                userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName()))
-                .thenReturn(Optional.of(subscription));
+        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName())).thenReturn(Optional.of(subscription));
 
-        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(
-                userSubscriptionDTO.getUserEmail(),
-                subscription.getId()))
-                .thenReturn(Optional.of(userSubscriptionEntity));
+        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscription.getId())).thenReturn(Optional.of(userSubscriptionEntity));
 
         doNothing().when(userSubscriptionMapper).updateUserSubscriptionFromDto(userSubscriptionEntity, userSubscriptionDTO);
 
@@ -181,33 +176,20 @@ class UserSubscriptionServiceImplTest {
 
     @Test
     void updateUserSubscription_userSubscriptionNotFound_throwsException() {
-        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(
-                userSubscriptionDTO.getSubscriptionDTO().getStatus(),
-                userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName()))
-                .thenReturn(Optional.of(subscription));
+        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName())).thenReturn(Optional.of(subscription));
 
-        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(
-                userSubscriptionDTO.getUserEmail(),
-                subscription.getId()))
-                .thenReturn(Optional.empty());
+        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscription.getId())).thenReturn(Optional.empty());
 
-        ModelNotFoundException ex = assertThrows(ModelNotFoundException.class,
-                () -> service.updateUserSubscription(userSubscriptionDTO));
+        ModelNotFoundException ex = assertThrows(ModelNotFoundException.class, () -> service.updateUserSubscription(userSubscriptionDTO));
 
         assertEquals(ErrorMessages.USER_SUBSCRIPTION_NOT_FOUND, ex.getMessage());
     }
 
     @Test
     void deleteUserSubscription_success() {
-        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(
-                userSubscriptionDTO.getSubscriptionDTO().getStatus(),
-                userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName()))
-                .thenReturn(Optional.of(subscription));
+        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName())).thenReturn(Optional.of(subscription));
 
-        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(
-                userSubscriptionDTO.getUserEmail(),
-                subscription.getId()))
-                .thenReturn(Optional.of(userSubscriptionEntity));
+        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscription.getId())).thenReturn(Optional.of(userSubscriptionEntity));
 
         service.deleteUserSubscription(userSubscriptionDTO);
 
@@ -218,16 +200,11 @@ class UserSubscriptionServiceImplTest {
     @Test
     void deleteUserSubscription_userSubscriptionNotFound_throwsException() {
         UserSubscriptionServiceImpl spyService = Mockito.spy(service);
-        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(
-                userSubscriptionDTO.getSubscriptionDTO().getStatus(),
-                userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName()))
-                .thenReturn(Optional.of(subscription));
+        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName())).thenReturn(Optional.of(subscription));
 
-        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscription.getId()))
-                .thenReturn(Optional.empty());
+        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscription.getId())).thenReturn(Optional.empty());
 
-        ModelNotFoundException ex = assertThrows(ModelNotFoundException.class,
-                () -> spyService.deleteUserSubscription(userSubscriptionDTO));
+        ModelNotFoundException ex = assertThrows(ModelNotFoundException.class, () -> spyService.deleteUserSubscription(userSubscriptionDTO));
 
         assertEquals(ErrorMessages.USER_SUBSCRIPTION_NOT_FOUND, ex.getMessage());
     }
@@ -261,32 +238,173 @@ class UserSubscriptionServiceImplTest {
         Subscription subscriptionForTest = new Subscription();
         subscriptionForTest.setStatus(SubscriptionStatus.ACTIVE);
         SubscriptionType subscriptionType = new SubscriptionType();
+        subscriptionType.setName("name");
         subscriptionType.setDurationDays(10);
         subscriptionForTest.setSubscriptionType(subscriptionType);
+
+        SubscriptionTypeDTO subscriptionTypeDTO = new SubscriptionTypeDTO();
+        subscriptionTypeDTO.setDurationDays(10);
+        subscriptionTypeDTO.setName("name");
+
+        SubscriptionDTO subscriptionDTO = new SubscriptionDTO();
+        subscriptionDTO.setStatus(SubscriptionStatus.ACTIVE);
+        subscriptionDTO.setSubscriptionTypeDTO(subscriptionTypeDTO);
+
+        UserSubscriptionDTO userSubscriptionDTO = new UserSubscriptionDTO();
+        userSubscriptionDTO.setSubscriptionDTO(subscriptionDTO);
+        userSubscriptionDTO.setUserEmail("test@example.com");
 
         UserSubscription entity = new UserSubscription();
         entity.setSubscription(subscriptionForTest);
         entity.setAssignedAt(assignedAt);
 
-        UserSubscriptionDTO dto = mock(UserSubscriptionDTO.class);
-        when(userSubscriptionMapper.toEntity(dto)).thenReturn(entity);
+        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(subscriptionDTO.getStatus(), subscriptionTypeDTO.getName())).thenReturn(Optional.of(subscriptionForTest));
 
-        boolean expired = service.isUserSubscriptionExpired(dto, LocalDateTime.now());
+        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscriptionForTest.getId())).thenReturn(Optional.of(entity));
+
+        when(userSubscriptionMapper.toEntity(userSubscriptionDTO)).thenReturn(entity);
+
+        boolean expired = service.isUserSubscriptionExpired(userSubscriptionDTO, LocalDateTime.now());
 
         assertTrue(expired);
     }
 
+
     @Test
-    void isUserSubscriptionExpired_notActive_returnsFalse() {
+    void isUserSubscriptionExpired_beforeExpiration_returnsFalse() {
+        LocalDateTime assignedAt = LocalDateTime.now().minusDays(1);
+
         Subscription subscriptionForTest = new Subscription();
-        subscriptionForTest.setStatus(SubscriptionStatus.EXPIRED);
+        subscriptionForTest.setStatus(SubscriptionStatus.ACTIVE);
+        SubscriptionType subscriptionType = new SubscriptionType();
+        subscriptionType.setName("name");
+        subscriptionType.setDurationDays(10);
+        subscriptionForTest.setSubscriptionType(subscriptionType);
+
+        SubscriptionTypeDTO subscriptionTypeDTO = new SubscriptionTypeDTO();
+        subscriptionTypeDTO.setDurationDays(10);
+        subscriptionTypeDTO.setName("name");
+
+        SubscriptionDTO subscriptionDTO = new SubscriptionDTO();
+        subscriptionDTO.setStatus(SubscriptionStatus.ACTIVE);
+        subscriptionDTO.setSubscriptionTypeDTO(subscriptionTypeDTO);
+
+        UserSubscriptionDTO userSubscriptionDTO = new UserSubscriptionDTO();
+        userSubscriptionDTO.setSubscriptionDTO(subscriptionDTO);
+        userSubscriptionDTO.setUserEmail("test@example.com");
+
         UserSubscription entity = new UserSubscription();
         entity.setSubscription(subscriptionForTest);
+        entity.setAssignedAt(assignedAt);
 
-        UserSubscriptionDTO dto = mock(UserSubscriptionDTO.class);
-        when(userSubscriptionMapper.toEntity(dto)).thenReturn(entity);
+        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(subscriptionDTO.getStatus(), subscriptionTypeDTO.getName())).thenReturn(Optional.of(subscriptionForTest));
 
-        boolean expired = service.isUserSubscriptionExpired(dto, LocalDateTime.now());
+        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscriptionForTest.getId())).thenReturn(Optional.of(entity));
+
+        when(userSubscriptionMapper.toEntity(userSubscriptionDTO)).thenReturn(entity);
+        boolean expired = service.isUserSubscriptionExpired(userSubscriptionDTO, LocalDateTime.now());
+
         assertFalse(expired);
     }
+
+
+    @Test
+    void isUserSubscriptionExpired_afterExpiration_returnsTrue() {
+        LocalDateTime assignedAt = LocalDateTime.now().minusDays(15);
+
+        Subscription subscriptionForTest = new Subscription();
+        subscriptionForTest.setStatus(SubscriptionStatus.ACTIVE);
+        SubscriptionType subscriptionType = new SubscriptionType();
+        subscriptionType.setName("name");
+        subscriptionType.setDurationDays(10);
+        subscriptionForTest.setSubscriptionType(subscriptionType);
+
+        SubscriptionTypeDTO subscriptionTypeDTO = new SubscriptionTypeDTO();
+        subscriptionTypeDTO.setDurationDays(10);
+        subscriptionTypeDTO.setName("name");
+
+        SubscriptionDTO subscriptionDTO = new SubscriptionDTO();
+        subscriptionDTO.setStatus(SubscriptionStatus.ACTIVE);
+        subscriptionDTO.setSubscriptionTypeDTO(subscriptionTypeDTO);
+
+        UserSubscriptionDTO userSubscriptionDTO = new UserSubscriptionDTO();
+        userSubscriptionDTO.setSubscriptionDTO(subscriptionDTO);
+        userSubscriptionDTO.setUserEmail("test@example.com");
+
+        UserSubscription entity = new UserSubscription();
+        entity.setSubscription(subscriptionForTest);
+        entity.setAssignedAt(assignedAt);
+
+        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(subscriptionDTO.getStatus(), subscriptionTypeDTO.getName())).thenReturn(Optional.of(subscriptionForTest));
+
+        when(userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscriptionForTest.getId())).thenReturn(Optional.of(entity));
+
+        when(userSubscriptionMapper.toEntity(userSubscriptionDTO)).thenReturn(entity);
+        boolean expired = service.isUserSubscriptionExpired(userSubscriptionDTO, LocalDateTime.now());
+        assertTrue(expired);
+    }
+
+    @Test
+    void validateUserSubscription_noSubscriptionAndHasActiveBooking_throwsBookingAlreadyActive() {
+        String email = "user@example.com";
+        when(userSubscriptionRepository.findOne(any(Specification.class))).thenReturn(Optional.empty());
+        when(userService.hasActiveBooking(eq(email), any(LocalDateTime.class))).thenReturn(true);
+
+        BookingAlreadyActiveException ex = assertThrows(BookingAlreadyActiveException.class, () -> service.validateUserSubscription(email));
+        assertEquals(ErrorMessages.ALREADY_ACTIVE, ex.getMessage());
+    }
+
+    @Test
+    void validateUserSubscription_noSubscriptionAndNoActiveBooking_returnsEmpty() {
+        String email = "user@example.com";
+        when(userSubscriptionRepository.findOne(any(Specification.class))).thenReturn(Optional.empty());
+        when(userService.hasActiveBooking(eq(email), any(LocalDateTime.class))).thenReturn(false);
+
+        Optional<UserSubscription> result = service.validateUserSubscription(email);
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    void validateUserSubscription_subscriptionExpired_throwsUserSubscriptionExpired() {
+        String email = "user@example.com";
+        UserSubscription expired = new UserSubscription();
+        expired.setAssignedAt(LocalDateTime.now().minusDays(10));
+        Subscription sub = new Subscription();
+        SubscriptionType st = new SubscriptionType();
+        st.setDurationDays(5);
+        sub.setSubscriptionType(st);
+        expired.setSubscription(sub);
+
+        when(userSubscriptionRepository.findOne(any(Specification.class))).thenReturn(Optional.of(expired));
+        UserSubscriptionDTO dto = mock(UserSubscriptionDTO.class);
+        when(userSubscriptionMapper.toDto(expired)).thenReturn(dto);
+        doReturn(true).when(service).isUserSubscriptionExpired(any(UserSubscriptionDTO.class), any(LocalDateTime.class));
+
+
+        UserSubscriptionExpiredException ex = assertThrows(UserSubscriptionExpiredException.class, () -> service.validateUserSubscription(email));
+        assertEquals(ErrorMessages.USER_SUBSCRIPTION_EXPIRED, ex.getMessage());
+    }
+
+    @Test
+    void validateUserSubscription_subscriptionActiveAndNotExpired_returnsOptional() {
+        String email = "user@example.com";
+        UserSubscription valid = new UserSubscription();
+        valid.setAssignedAt(LocalDateTime.now().minusDays(1));
+        Subscription sub = new Subscription();
+        SubscriptionType st = new SubscriptionType();
+        st.setDurationDays(5);
+        sub.setSubscriptionType(st);
+        valid.setSubscription(sub);
+
+        when(userSubscriptionRepository.findOne(any(Specification.class))).thenReturn(Optional.of(valid));
+        UserSubscriptionDTO dto = mock(UserSubscriptionDTO.class);
+        when(userSubscriptionMapper.toDto(valid)).thenReturn(dto);
+        doReturn(false).when(service).isUserSubscriptionExpired(any(UserSubscriptionDTO.class), any(LocalDateTime.class));
+
+
+        Optional<UserSubscription> result = service.validateUserSubscription(email);
+        assertTrue(result.isPresent());
+        assertSame(valid, result.get());
+    }
+
 }

@@ -5,21 +5,16 @@ import com.poolapp.pool.dto.SessionDTO;
 import com.poolapp.pool.exception.BookingStatusNotActiveException;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.mapper.BookingMapper;
-import com.poolapp.pool.mapper.UserSubscriptionMapper;
 import com.poolapp.pool.model.Booking;
 import com.poolapp.pool.model.BookingId;
 import com.poolapp.pool.model.Session;
 import com.poolapp.pool.model.User;
 import com.poolapp.pool.model.UserSubscription;
 import com.poolapp.pool.model.enums.BookingStatus;
-import com.poolapp.pool.model.enums.SubscriptionStatus;
 import com.poolapp.pool.repository.BookingRepository;
-import com.poolapp.pool.repository.PoolRepository;
-import com.poolapp.pool.repository.SessionRepository;
-import com.poolapp.pool.repository.SubscriptionRepository;
-import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.UserSubscriptionRepository;
 import com.poolapp.pool.repository.specification.builder.BookingSpecificationBuilder;
+import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecificationBuilder;
 import com.poolapp.pool.service.BookingService;
 import com.poolapp.pool.service.MailService;
 import com.poolapp.pool.service.SessionService;
@@ -42,18 +37,14 @@ import java.util.Optional;
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
-    private final UserRepository userRepository;
-    private final SessionRepository sessionRepository;
     private final BookingMapper bookingMapper;
-    private final PoolRepository poolRepository;
     private final UserService userService;
     private final SessionService sessionService;
     private final MailService mailService;
     private final BookingSpecificationBuilder bookingSpecificationBuilder;
     private final UserSubscriptionRepository userSubscriptionRepository;
     private final UserSubscriptionService userSubscriptionService;
-    private final UserSubscriptionMapper userSubscriptionMapper;
-    private final SubscriptionRepository subscriptionRepository;
+    private final UserSubscriptionSpecificationBuilder userSubscriptionSpecificationBuilder;
 
 
     @Transactional
@@ -92,11 +83,10 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.BOOKING_NOT_FOUND));
         bookingRepository.deleteById(bookingId);
-        userSubscriptionRepository.findByUserEmailAndSubscriptionStatusAndRemainingBookingsGreaterThanNative(
-                bookingDTO.getUserEmail(),
-                SubscriptionStatus.ACTIVE.name(),
-                0
-        ).ifPresent(userSubscription -> {
+        Specification<UserSubscription> spec = userSubscriptionSpecificationBuilder
+                .activeWithRemainingBookingsAndUserEmail(bookingDTO.getUserEmail(), 0);
+
+        userSubscriptionRepository.findOne(spec).ifPresent(userSubscription -> {
             userSubscription.setRemainingBookings(userSubscription.getRemainingBookings() + 1);
             userSubscriptionRepository.save(userSubscription);
         });
@@ -123,14 +113,14 @@ public class BookingServiceImpl implements BookingService {
         request.setOperation(CapacityOperation.INCREASE);
         sessionService.changeSessionCapacity(request);
 
-        userSubscriptionRepository.findByUserEmailAndSubscriptionStatusAndRemainingBookingsGreaterThanNative(
-                bookingDTO.getUserEmail(),
-                SubscriptionStatus.ACTIVE.name(),
-                0
-        ).ifPresent(userSubscription -> {
+        Specification<UserSubscription> spec = userSubscriptionSpecificationBuilder
+                .activeWithRemainingBookingsAndUserEmail(bookingDTO.getUserEmail(), 0);
+
+        userSubscriptionRepository.findOne(spec).ifPresent(userSubscription -> {
             userSubscription.setRemainingBookings(userSubscription.getRemainingBookings() + 1);
             userSubscriptionRepository.save(userSubscription);
         });
+
         bookingRepository.save(booking);
     }
 

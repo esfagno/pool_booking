@@ -15,8 +15,6 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -40,7 +38,6 @@ public class Subscription {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", columnDefinition = "subscription_status", nullable = false)
-    @JdbcTypeCode(SqlTypes.CHAR)
     private SubscriptionStatus status;
 
     @CreatedDate

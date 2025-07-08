@@ -36,4 +36,14 @@ public class UserSubscriptionSpecification {
     public static Specification<UserSubscription> hasRemainingBookingsGreaterThan(int remaining) {
         return (root, query, cb) -> cb.greaterThan(root.get("remainingBookings"), remaining);
     }
+
+    public static Specification<UserSubscription> isActiveAndHasRemainingBookings(int minBookings) {
+        return (root, query, cb) -> {
+            Join<UserSubscription, Subscription> subscriptionJoin = root.join("subscription");
+            return cb.and(
+                    cb.equal(subscriptionJoin.get("status"), SubscriptionStatus.ACTIVE),
+                    cb.greaterThan(root.get("remainingBookings"), minBookings)
+            );
+        };
+    }
 }
