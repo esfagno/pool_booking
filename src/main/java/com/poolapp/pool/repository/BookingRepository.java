@@ -18,18 +18,12 @@ public interface BookingRepository extends JpaRepository<Booking, BookingId>, Jp
 
     void deleteAllBySessionId(Integer sessionId);
 
-    List<Booking> findByUserEmail(String email);
-
     boolean existsBySessionId(Integer sessionId);
 
     boolean existsByUserIdAndSessionStartTimeAfter(Integer userId, LocalDateTime startTime);
 
-    Optional<Booking> findByUserEmailAndSessionPoolNameAndBookingTime(String userEmail, String poolName, LocalDateTime bookingTime);
-
     List<Booking> findByUser_EmailAndSession_StartTime(String email, LocalDateTime startTime);
 
     List<Booking> findBySession_StartTimeBeforeAndStatus(LocalDateTime time, BookingStatus status);
-
-    List<Booking> findByUser_EmailAndStatus(String email, BookingStatus status);
 
 }

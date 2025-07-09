@@ -9,6 +9,7 @@ import com.poolapp.pool.repository.specification.builder.SubscriptionTypeSpecifi
 import com.poolapp.pool.service.SubscriptionTypeService;
 import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 
@@ -16,6 +17,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class SubscriptionTypeServiceImpl implements SubscriptionTypeService {
 
     private final SubscriptionTypeRepository subscriptionTypeRepository;
@@ -24,38 +26,47 @@ public class SubscriptionTypeServiceImpl implements SubscriptionTypeService {
 
     @Override
     public SubscriptionTypeDTO createSubscriptionType(SubscriptionTypeDTO subscriptionTypeDTO) {
+        log.info("Creating SubscriptionType with name: {}", subscriptionTypeDTO.getName());
         SubscriptionType subscriptionType = subscriptionTypeMapper.toEntity(subscriptionTypeDTO);
         subscriptionTypeRepository.save(subscriptionType);
+        log.info("SubscriptionType created with id: {}", subscriptionType.getId());
         return subscriptionTypeMapper.toDto(subscriptionType);
     }
 
     @Override
     public SubscriptionTypeDTO updateSubscriptionType(SubscriptionTypeDTO newSubscriptionTypeDTO) {
+        log.info("Updating SubscriptionType with name: {}", newSubscriptionTypeDTO.getName());
         SubscriptionType subscriptionType = findSubscriptionTypeByNameOrThrow(newSubscriptionTypeDTO.getName());
         subscriptionTypeMapper.updateSubscriptionTypeFromDto(subscriptionType, newSubscriptionTypeDTO);
         SubscriptionType savedSubscriptionType = subscriptionTypeRepository.save(subscriptionType);
+        log.info("SubscriptionType updated with id: {}", savedSubscriptionType.getId());
         return subscriptionTypeMapper.toDto(savedSubscriptionType);
     }
 
     @Override
     public void deleteSubscriptionType(SubscriptionTypeDTO subscriptionTypeDTO) {
+        log.info("Deleting SubscriptionType with name: {}", subscriptionTypeDTO.getName());
         SubscriptionType subscriptionType = findSubscriptionTypeByNameOrThrow(subscriptionTypeDTO.getName());
         subscriptionTypeRepository.deleteById(subscriptionType.getId());
+        log.info("SubscriptionType deleted with id: {}", subscriptionType.getId());
     }
 
     @Override
     public List<SubscriptionTypeDTO> findSubscriptionTypesByFilter(SubscriptionTypeDTO subscriptionTypeDTO) {
+        log.debug("Finding SubscriptionTypes with filter: {}", subscriptionTypeDTO);
         SubscriptionType filter = subscriptionTypeMapper.toEntity(subscriptionTypeDTO);
         Specification<SubscriptionType> spec = subscriptionTypeSpecificationBuilder.buildSpecification(filter);
         List<SubscriptionType> subscriptionTypes = subscriptionTypeRepository.findAll(spec);
+        log.info("Found {} subscription types", subscriptionTypes.size());
         return subscriptionTypeMapper.toDtoList(subscriptionTypes);
     }
 
     private SubscriptionType findSubscriptionTypeByNameOrThrow(String name) {
-        return subscriptionTypeRepository.findByName(name)
-                .orElseThrow(() -> new ModelNotFoundException(
-                        String.format(ErrorMessages.SUBSCRIPTION_NOT_FOUND, name)
-                ));
+        log.debug("Searching for SubscriptionType by name: {}", name);
+        return subscriptionTypeRepository.findByName(name).orElseThrow(() -> {
+            log.warn("SubscriptionType not found: {}", name);
+            return new ModelNotFoundException(String.format(ErrorMessages.SUBSCRIPTION_NOT_FOUND, name));
+        });
     }
 
 }
