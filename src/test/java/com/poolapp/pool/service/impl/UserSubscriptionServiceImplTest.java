@@ -15,6 +15,7 @@ import com.poolapp.pool.model.enums.SubscriptionStatus;
 import com.poolapp.pool.repository.SubscriptionRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.UserSubscriptionRepository;
+import com.poolapp.pool.repository.specification.builder.SubscriptionSpecificationBuilder;
 import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecificationBuilder;
 import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.util.ErrorMessages;
@@ -69,6 +70,9 @@ class UserSubscriptionServiceImplTest {
     private UserSubscriptionSpecificationBuilder userSubscriptionSpecificationBuilder;
 
     @Mock
+    private SubscriptionSpecificationBuilder subscriptionSpecificationBuilder;
+
+    @Mock
     private UserService userService;
 
     private UserSubscriptionDTO userSubscriptionDTO;
@@ -115,9 +119,11 @@ class UserSubscriptionServiceImplTest {
         UserSubscription entity = new UserSubscription();
         UserSubscription saved = new UserSubscription();
         UserSubscriptionDTO savedDto = new UserSubscriptionDTO();
+        Specification<Subscription> spec = Specification.where(null);
 
         when(userRepository.findByEmail(userSubscriptionDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName())).thenReturn(Optional.of(subscription));
+        when(subscriptionSpecificationBuilder.buildSpecification(userSubscriptionDTO.getSubscriptionDTO())).thenReturn(spec);
+        when(subscriptionRepository.findOne(spec)).thenReturn(Optional.of(subscription));
         when(userSubscriptionMapper.toEntity(userSubscriptionDTO)).thenReturn(entity);
         when(userSubscriptionRepository.save(any(UserSubscription.class))).thenReturn(saved);
         when(userSubscriptionMapper.toDto(saved)).thenReturn(savedDto);
@@ -126,13 +132,15 @@ class UserSubscriptionServiceImplTest {
 
         assertNotNull(result);
         verify(userRepository).findByEmail(userSubscriptionDTO.getUserEmail());
-        verify(subscriptionRepository).findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName());
+        verify(subscriptionSpecificationBuilder).buildSpecification(userSubscriptionDTO.getSubscriptionDTO());
+        verify(subscriptionRepository).findOne(spec);
         verify(userSubscriptionMapper).toEntity(userSubscriptionDTO);
         verify(userSubscriptionRepository).save(entity);
         verify(userSubscriptionMapper).toDto(saved);
 
         assertEquals(savedDto, result);
     }
+
 
     @Test
     void createUserSubscription_userNotFound_throwsException() {
@@ -144,8 +152,11 @@ class UserSubscriptionServiceImplTest {
 
     @Test
     void createUserSubscription_subscriptionNotFound_throwsException() {
+        Specification<Subscription> spec = Specification.where(null);
+
         when(userRepository.findByEmail(userSubscriptionDTO.getUserEmail())).thenReturn(Optional.of(user));
-        when(subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName())).thenReturn(Optional.empty());
+        when(subscriptionSpecificationBuilder.buildSpecification(userSubscriptionDTO.getSubscriptionDTO())).thenReturn(spec);
+        when(subscriptionRepository.findOne(spec)).thenReturn(Optional.empty());
 
         ModelNotFoundException ex = assertThrows(ModelNotFoundException.class, () -> service.createUserSubscription(userSubscriptionDTO));
         assertEquals(ErrorMessages.SUBSCRIPTION_NOT_FOUND, ex.getMessage());

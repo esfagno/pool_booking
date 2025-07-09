@@ -12,6 +12,7 @@ import com.poolapp.pool.repository.SubscriptionRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.UserSubscriptionRepository;
 import com.poolapp.pool.repository.specification.UserSubscriptionSpecification;
+import com.poolapp.pool.repository.specification.builder.SubscriptionSpecificationBuilder;
 import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecificationBuilder;
 import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.service.UserSubscriptionService;
@@ -36,6 +37,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     private final UserSubscriptionMapper userSubscriptionMapper;
     private final UserSubscriptionSpecificationBuilder userSubscriptionSpecificationBuilder;
     private final UserService userService;
+    private final SubscriptionSpecificationBuilder subscriptionSpecificationBuilder;
 
     @Override
     public UserSubscriptionDTO createUserSubscription(UserSubscriptionDTO userSubscriptionDTO) {
@@ -45,10 +47,12 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
             return new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND);
         });
 
-        Subscription subscription = subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName()).orElseThrow(() -> {
+        Specification<Subscription> spec = subscriptionSpecificationBuilder.buildSpecification(userSubscriptionDTO.getSubscriptionDTO());
+        Subscription subscription = subscriptionRepository.findOne(spec).orElseThrow(() -> {
             log.warn("Subscription not found: status={}, type={}", userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName());
             return new ModelNotFoundException(ErrorMessages.SUBSCRIPTION_NOT_FOUND);
         });
+
 
         UserSubscription userSubscription = userSubscriptionMapper.toEntity(userSubscriptionDTO);
         userSubscription.setUser(user);
