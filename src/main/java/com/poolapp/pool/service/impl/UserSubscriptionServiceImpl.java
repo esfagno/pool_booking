@@ -93,7 +93,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         UserSubscription filter = userSubscriptionMapper.toEntity(userSubscriptionDTO);
         Specification<UserSubscription> spec = userSubscriptionSpecificationBuilder.buildSpecification(filter);
         List<UserSubscription> userSubscriptions = userSubscriptionRepository.findAll(spec);
-        log.info("Found {} user subscriptions", userSubscriptions.size());
+        log.debug("Found {} user subscriptions", userSubscriptions.size());
         return userSubscriptionMapper.toDtoList(userSubscriptions);
     }
 
@@ -107,7 +107,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         });
         LocalDateTime expirationDate = filter.getAssignedAt().plusDays(filter.getSubscription().getSubscriptionType().getDurationDays());
         boolean expired = expirationDate.isBefore(now);
-        log.info("UserSubscription expired={} for user={}, expirationDate={}", expired, userSubscriptionDTO.getUserEmail(), expirationDate);
+        log.debug("UserSubscription expired={} for user={}, expirationDate={}", expired, userSubscriptionDTO.getUserEmail(), expirationDate);
         return expired;
     }
 
@@ -135,10 +135,15 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     }
 
 
-    private Optional<UserSubscription> findUserSubscriptionByDTO(UserSubscriptionDTO userSubscriptionDTO) {
-        log.debug("Finding UserSubscription by DTO: user={}, subscriptionType={}", userSubscriptionDTO.getUserEmail(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName());
-        return subscriptionRepository.findByStatusAndSubscriptionType_Name(userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName()).flatMap(subscription -> userSubscriptionRepository.findByUserEmailAndSubscriptionId(userSubscriptionDTO.getUserEmail(), subscription.getId()));
+    private Optional<UserSubscription> findUserSubscriptionByDTO(UserSubscriptionDTO dto) {
+        log.debug("Finding UserSubscription by DTO: user={}, subscriptionType={}", dto.getUserEmail(), dto.getSubscriptionDTO().getSubscriptionTypeDTO().getName());
+
+        UserSubscription filter = userSubscriptionMapper.toEntity(dto);
+        Specification<UserSubscription> spec = userSubscriptionSpecificationBuilder.buildSpecification(filter);
+
+        return userSubscriptionRepository.findOne(spec);
     }
+
 
 }
 

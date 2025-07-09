@@ -143,7 +143,7 @@ public class BookingServiceImpl implements BookingService {
         filter.setId(bookingId);
         Specification<Booking> spec = bookingSpecificationBuilder.buildSpecification(filter);
         List<Booking> bookings = bookingRepository.findAll(spec);
-        log.info("Found {} bookings with given filter", bookings.size());
+        log.debug("Found {} bookings with given filter", bookings.size());
         return bookingMapper.toDtoList(bookings);
     }
 
@@ -194,7 +194,7 @@ public class BookingServiceImpl implements BookingService {
             return new ModelNotFoundException(String.format(ErrorMessages.SESSION_NOT_FOUND, sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime()));
         });
         long count = bookingRepository.countBySessionId(session.getId());
-        log.info("Counted {} bookings for session id={}", count, session.getId());
+        log.debug("Counted {} bookings for session id={}", count, session.getId());
         return count;
     }
 
@@ -207,7 +207,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     private BookingId buildBookingId(BookingDTO bookingDTO) {
-        log.debug("Building BookingId for user: {}, session: {}", bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
         User user = userService.findUserByEmail(bookingDTO.getUserEmail()).orElseThrow(() -> {
             log.warn("User not found while building BookingId: {}", bookingDTO.getUserEmail());
             return new ModelNotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, bookingDTO.getUserEmail()));
