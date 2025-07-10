@@ -10,6 +10,9 @@ public final class ErrorMessages {
     public static final String NO_FREE_PLACES = "No free places found:";
     public static final String WRONG_STATUS = "Cannot delete booking. Current status:";
     public static final String ALREADY_ACTIVE = "User already has an active booking";
+    public static final String SUBSCRIPTION_NOT_FOUND = "Subscription type not found: ";
+    public static final String USER_SUBSCRIPTION_NOT_FOUND = "User subscription not found: ";
+    public static final String USER_SUBSCRIPTION_EXPIRED = "User subscription expired: ";
 
     private ErrorMessages() {
     }

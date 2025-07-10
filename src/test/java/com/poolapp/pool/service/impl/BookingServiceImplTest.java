@@ -3,27 +3,40 @@ package com.poolapp.pool.service.impl;
 import com.poolapp.pool.dto.BookingDTO;
 import com.poolapp.pool.dto.PoolDTO;
 import com.poolapp.pool.dto.SessionDTO;
+import com.poolapp.pool.dto.SubscriptionDTO;
+import com.poolapp.pool.dto.SubscriptionTypeDTO;
+import com.poolapp.pool.dto.UserSubscriptionDTO;
 import com.poolapp.pool.exception.BookingAlreadyActiveException;
 import com.poolapp.pool.exception.BookingStatusNotActiveException;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.exception.NoFreePlacesException;
+import com.poolapp.pool.exception.UserSubscriptionExpiredException;
 import com.poolapp.pool.mapper.BookingMapper;
 import com.poolapp.pool.mapper.SessionMapper;
+import com.poolapp.pool.mapper.UserSubscriptionMapper;
 import com.poolapp.pool.model.Booking;
 import com.poolapp.pool.model.BookingId;
 import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.Session;
+import com.poolapp.pool.model.Subscription;
+import com.poolapp.pool.model.SubscriptionType;
 import com.poolapp.pool.model.User;
+import com.poolapp.pool.model.UserSubscription;
 import com.poolapp.pool.model.enums.BookingStatus;
+import com.poolapp.pool.model.enums.SubscriptionStatus;
 import com.poolapp.pool.repository.BookingRepository;
 import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.SessionRepository;
 import com.poolapp.pool.repository.UserRepository;
+import com.poolapp.pool.repository.UserSubscriptionRepository;
+import com.poolapp.pool.repository.specification.UserSubscriptionSpecification;
 import com.poolapp.pool.service.MailService;
 import com.poolapp.pool.service.SessionService;
 import com.poolapp.pool.service.UserService;
+import com.poolapp.pool.service.UserSubscriptionService;
 import com.poolapp.pool.util.CapacityOperation;
 import com.poolapp.pool.util.ChangeSessionCapacityRequest;
+import com.poolapp.pool.util.ErrorMessages;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -72,6 +85,9 @@ class BookingServiceImplTest {
     private PoolRepository poolRepository;
 
     @MockBean
+    private UserSubscriptionRepository userSubscriptionRepository;
+
+    @MockBean
     private UserService userService;
 
     @MockBean
@@ -86,6 +102,12 @@ class BookingServiceImplTest {
     @SpyBean
     private SessionMapper sessionMapper;
 
+    @SpyBean
+    private UserSubscriptionMapper userSubscriptionMapper;
+
+    @SpyBean
+    private UserSubscriptionService userSubscriptionService;
+
 
     @Autowired
     private BookingServiceImpl bookingService;
@@ -97,6 +119,9 @@ class BookingServiceImplTest {
     private Booking booking;
     private Pool pool;
     private PoolDTO poolDTO;
+    private UserSubscriptionDTO userSubscriptionDTO;
+    private Subscription subscription;
+    private UserSubscription userSubscriptionEntity;
 
     @BeforeEach
     void setUp() {
@@ -150,11 +175,85 @@ class BookingServiceImplTest {
         assertNotNull(result);
         verify(bookingRepository, times(1)).save(any());
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
-        verify(userService, times(1)).hasActiveBooking(eq(bookingDTO.getUserEmail()), any(LocalDateTime.class));
         verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
         verify(sessionService, times(1)).validateSessionHasAvailableSpots(sessionDTO);
     }
 
+
+    @Test
+    void createBooking_withActiveSubscription_success() {
+
+        userSubscriptionDTO = new UserSubscriptionDTO();
+        userSubscriptionDTO.setUserEmail("test@example.com");
+
+        SubscriptionDTO subscriptionDTO = new SubscriptionDTO();
+        subscriptionDTO.setStatus(SubscriptionStatus.ACTIVE);
+        SubscriptionTypeDTO subscriptionTypeDTO = new SubscriptionTypeDTO();
+        subscriptionTypeDTO.setName("Basic");
+        subscriptionTypeDTO.setDurationDays(30);
+        subscriptionDTO.setSubscriptionTypeDTO(subscriptionTypeDTO);
+        userSubscriptionDTO.setSubscriptionDTO(subscriptionDTO);
+
+        userSubscriptionEntity = new UserSubscription();
+        userSubscriptionEntity.setAssignedAt(LocalDateTime.now().minusDays(1));
+
+        userSubscriptionEntity.setUser(user);
+
+        subscription = new Subscription();
+        subscription.setStatus(SubscriptionStatus.ACTIVE);
+        SubscriptionType subscriptionType = new SubscriptionType();
+        subscriptionType.setName("Basic");
+        subscriptionType.setDurationDays(30);
+        subscription.setSubscriptionType(subscriptionType);
+        subscription.setId(1);
+
+        userSubscriptionEntity = new UserSubscription();
+        userSubscriptionEntity.setUser(user);
+        userSubscriptionEntity.setSubscription(subscription);
+        userSubscriptionEntity.setAssignedAt(LocalDateTime.now().minusDays(2));
+        userSubscriptionEntity.setId(42);
+        userSubscriptionEntity.setRemainingBookings(5);
+
+        Specification<UserSubscription> spec = UserSubscriptionSpecification.hasUserEmail(user.getEmail());
+
+        when(userService.findUserByEmail(user.getEmail())).thenReturn(Optional.of(user));
+        when(sessionService.getSessionByPoolNameAndStartTime(pool.getName(), session.getStartTime())).thenReturn(Optional.of(session));
+        when(userSubscriptionRepository.findOne(spec)).thenReturn(Optional.of(userSubscriptionEntity));
+        when(userSubscriptionService.validateUserSubscription(bookingDTO.getUserEmail())).thenReturn(Optional.of(userSubscriptionEntity));
+        when(sessionService.validateSessionHasAvailableSpots(bookingDTO.getSessionDTO())).thenReturn(true);
+        when(bookingRepository.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        BookingDTO result = bookingService.createBooking(bookingDTO);
+
+        assertNotNull(result);
+        assertEquals(4, userSubscriptionEntity.getRemainingBookings());
+
+        verify(bookingRepository).save(any());
+        verify(userSubscriptionRepository).save(userSubscriptionEntity);
+        verify(sessionService).changeSessionCapacity(any());
+        verify(mailService).sendBookingConfirmationEmail(bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
+    }
+
+
+    @Test
+    void createBooking_withExpiredSubscription_shouldThrow() {
+        when(userService.findUserByEmail(anyString()))
+                .thenReturn(Optional.of(user));
+        when(sessionService.getSessionByPoolNameAndStartTime(anyString(), any(LocalDateTime.class)))
+                .thenReturn(Optional.of(session));
+
+        doThrow(new UserSubscriptionExpiredException(ErrorMessages.USER_SUBSCRIPTION_EXPIRED))
+                .when(userService).hasActiveBooking(anyString(), any(LocalDateTime.class));
+
+        assertThrows(
+                UserSubscriptionExpiredException.class,
+                () -> bookingService.createBooking(bookingDTO));
+
+        verify(bookingRepository, never()).save(any());
+        verify(userSubscriptionRepository, never()).save(any());
+        verify(sessionService, never()).changeSessionCapacity(any());
+        verify(mailService, never()).sendBookingConfirmationEmail(anyString(), any());
+    }
 
     @Test
     void test_createBooking_userNotFound_shouldThrowException() {
@@ -208,7 +307,6 @@ class BookingServiceImplTest {
 
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
         verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
-        verify(userService, times(1)).hasActiveBooking(eq(bookingDTO.getUserEmail()), any(LocalDateTime.class));
         verify(sessionService, times(1)).validateSessionHasAvailableSpots(sessionDTO);
         verify(bookingRepository, never()).save(any());
     }
@@ -219,11 +317,17 @@ class BookingServiceImplTest {
         when(userService.findUserByEmail(bookingDTO.getUserEmail())).thenReturn(Optional.of(user));
         when(sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())).thenReturn(Optional.of(session));
 
+        BookingId bookingId = new BookingId(user.getId(), session.getId());
+        Booking booking = new Booking();
+        booking.setId(bookingId);
+
+        when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
+
         bookingService.deleteBooking(bookingDTO);
 
         verify(userService, times(1)).findUserByEmail(bookingDTO.getUserEmail());
         verify(sessionService, times(1)).getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
-        verify(bookingRepository, times(1)).deleteById(new BookingId(user.getId(), session.getId()));
+        verify(bookingRepository, times(1)).deleteById(bookingId);
     }
 
     @Test
@@ -359,8 +463,7 @@ class BookingServiceImplTest {
         when(sessionService.getSessionByPoolNameAndStartTime(newSessionDTO.getPoolDTO().getName(), newSessionDTO.getStartTime())).thenReturn(Optional.of(session));
         when(bookingRepository.findById(bookingId)).thenReturn(Optional.of(booking));
         when(bookingRepository.save(any(Booking.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        when(sessionService.getSessionByPoolNameAndStartTime(anyString(), any(LocalDateTime.class)))
-                .thenReturn(Optional.of(session));
+        when(sessionService.getSessionByPoolNameAndStartTime(anyString(), any(LocalDateTime.class))).thenReturn(Optional.of(session));
 
         BookingDTO updated = bookingService.updateBooking(bookingDTO, newBookingDTO);
 
@@ -389,8 +492,7 @@ class BookingServiceImplTest {
 
     @Test
     void test_hasUserBooked_trueWhenExists() {
-        when(bookingRepository.findByUser_EmailAndSession_StartTime(eq(bookingDTO.getUserEmail()), eq(session.getStartTime())))
-                .thenReturn(List.of(new Booking()));
+        when(bookingRepository.findByUser_EmailAndSession_StartTime(eq(bookingDTO.getUserEmail()), eq(session.getStartTime()))).thenReturn(List.of(new Booking()));
 
         boolean result = bookingService.hasUserBooked(bookingDTO.getUserEmail(), session.getStartTime());
         assertTrue(result);
@@ -398,8 +500,7 @@ class BookingServiceImplTest {
 
     @Test
     void test_hasUserBooked_falseWhenEmpty() {
-        when(bookingRepository.findByUser_EmailAndSession_StartTime(eq(bookingDTO.getUserEmail()), eq(session.getStartTime())))
-                .thenReturn(List.of());
+        when(bookingRepository.findByUser_EmailAndSession_StartTime(eq(bookingDTO.getUserEmail()), eq(session.getStartTime()))).thenReturn(List.of());
 
         boolean result = bookingService.hasUserBooked(bookingDTO.getUserEmail(), session.getStartTime());
         assertFalse(result);
@@ -412,8 +513,7 @@ class BookingServiceImplTest {
         Booking b2 = new Booking();
         b2.setStatus(BookingStatus.ACTIVE);
 
-        when(bookingRepository.findBySession_StartTimeBeforeAndStatus(any(LocalDateTime.class), eq(BookingStatus.ACTIVE)))
-                .thenReturn(List.of(b1, b2));
+        when(bookingRepository.findBySession_StartTimeBeforeAndStatus(any(LocalDateTime.class), eq(BookingStatus.ACTIVE))).thenReturn(List.of(b1, b2));
 
         bookingService.expirePastBookings(LocalDateTime.now());
 

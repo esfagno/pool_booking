@@ -14,8 +14,6 @@ public interface PoolScheduleRepository extends JpaRepository<PoolSchedule, Inte
 
     List<PoolSchedule> findAllByDayOfWeek(Short dayOfWeek);
 
-    List<PoolSchedule> findByPoolName(String poolName);
-
     List<PoolSchedule> findByPoolId(Integer poolId);
 
     @Query("SELECT DISTINCT ps.pool FROM PoolSchedule ps WHERE ps.dayOfWeek = :dayOfWeek")

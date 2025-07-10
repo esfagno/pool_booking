@@ -15,8 +15,9 @@ import com.poolapp.pool.util.CapacityOperation;
 import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mapstruct.factory.Mappers;
-import org.mockito.MockitoAnnotations;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -37,6 +38,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @SpringBootTest
+@ExtendWith(MockitoExtension.class)
 class SessionServiceImplTest {
 
     @MockBean
@@ -64,7 +66,6 @@ class SessionServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        MockitoAnnotations.openMocks(this);
 
         pool = new Pool();
         pool.setId(1);
