@@ -33,16 +33,16 @@
 <h2>Регистрация</h2>
 <form id="regForm">
     <input id="email" name="email" placeholder="Email" required type="email"/>
-    <input id="password" name="password" placeholder="Пароль (мин. 8 символов, с заглавной, цифрой и спецсимволом)"
-           required type="password"
-           pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$"
-           title="Пароль должен содержать минимум 8 символов, включая заглавную букву, цифру и специальный символ"/>
-    <input id="firstName" name="firstName" placeholder="Имя" required type="text" minlength="2" maxlength="30"/>
-    <input id="lastName" name="lastName" placeholder="Фамилия" required type="text" minlength="2" maxlength="30"/>
-    <input id="phoneNumber" name="phoneNumber" placeholder="Телефон (+7XXXXXXXXXX)"
-           required type="tel"
-           pattern="^\+7\d{10}$"
-           title="Телефон должен быть в формате +7XXXXXXXXXX"/>
+    <input id="password" name="password" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$"
+           placeholder="Пароль (мин. 8 символов, с заглавной, цифрой и спецсимволом)" required
+           title="Пароль должен содержать минимум 8 символов, включая заглавную букву, цифру и специальный символ"
+           type="password"/>
+    <input id="firstName" maxlength="30" minlength="2" name="firstName" placeholder="Имя" required type="text"/>
+    <input id="lastName" maxlength="30" minlength="2" name="lastName" placeholder="Фамилия" required type="text"/>
+    <input id="phoneNumber" name="phoneNumber" pattern="^\+7\d{10}$"
+           placeholder="Телефон (+7XXXXXXXXXX)" required
+           title="Телефон должен быть в формате +7XXXXXXXXXX"
+           type="tel"/>
     <button type="submit">Зарегистрироваться</button>
 </form>
 <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
