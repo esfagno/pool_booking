@@ -26,6 +26,7 @@ import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,6 +37,7 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@PreAuthorize("isAuthenticated()")
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
@@ -81,6 +83,7 @@ public class BookingServiceImpl implements BookingService {
 
     @Transactional
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteBooking(BookingDTO bookingDTO) {
         log.debug("Deleting booking for user: {}, session: {}", bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
         BookingId bookingId = buildBookingId(bookingDTO);
@@ -135,6 +138,7 @@ public class BookingServiceImpl implements BookingService {
         log.info("Booking cancelled successfully for user: {}, session: {}", bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
     }
 
+
     @Override
     public List<BookingDTO> findBookingsByFilter(BookingDTO filterDTO) {
         log.debug("Finding bookings by filter: {}", filterDTO);
@@ -157,6 +161,7 @@ public class BookingServiceImpl implements BookingService {
         return bookingMapper.toDto(savedBooking);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public boolean hasUserBooked(String userEmail, LocalDateTime sessionStartTime) {
         log.debug("Checking if user has booking: user={}, sessionStartTime={}", userEmail, sessionStartTime);
@@ -165,6 +170,7 @@ public class BookingServiceImpl implements BookingService {
         return result;
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
     @Override
     @Transactional
     public void expirePastBookings(LocalDateTime now) {
@@ -176,6 +182,7 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public void deleteBookingsBySession(SessionDTO sessionDTO) {
         log.debug("Deleting bookings by session: {}", sessionDTO);
         Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime()).orElseThrow(() -> {

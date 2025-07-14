@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8"/>
+    <title>Регистрация</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 400px;
+            margin: 50px auto;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input, button {
+            margin-bottom: 15px;
+            padding: 8px;
+            font-size: 16px;
+        }
+
+        button {
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+<h2>Регистрация</h2>
+<form id="regForm">
+    <input id="email" name="email" placeholder="Email" required type="email"/>
+    <input id="password" name="password" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$"
+           placeholder="Пароль (мин. 8 символов, с заглавной, цифрой и спецсимволом)" required
+           title="Пароль должен содержать минимум 8 символов, включая заглавную букву, цифру и специальный символ"
+           type="password"/>
+    <input id="firstName" maxlength="30" minlength="2" name="firstName" placeholder="Имя" required type="text"/>
+    <input id="lastName" maxlength="30" minlength="2" name="lastName" placeholder="Фамилия" required type="text"/>
+    <input id="phoneNumber" name="phoneNumber" pattern="^\+7\d{10}$"
+           placeholder="Телефон (+7XXXXXXXXXX)" required
+           title="Телефон должен быть в формате +7XXXXXXXXXX"
+           type="tel"/>
+    <button type="submit">Зарегистрироваться</button>
+</form>
+<p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+
+<script>
+    const form = document.getElementById('regForm');
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            email: document.getElementById('email').value,
+            password: document.getElementById('password').value,
+            firstName: document.getElementById('firstName').value,
+            lastName: document.getElementById('lastName').value,
+            phoneNumber: document.getElementById('phoneNumber').value
+        };
+
+        const response = await fetch('/api/auth/register', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        if (response.ok) {
+            alert('Регистрация прошла успешно!');
+            window.location.href = '/success';
+        } else {
+            const errorText = await response.text();
+            alert('Ошибка: ' + errorText);
+        }
+    });
+</script>
+</body>
+</html>

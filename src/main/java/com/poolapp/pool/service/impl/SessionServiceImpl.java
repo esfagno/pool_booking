@@ -14,6 +14,7 @@ import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,6 +23,7 @@ import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class SessionServiceImpl implements SessionService {
 
     private final SessionRepository sessionRepository;
@@ -47,6 +49,7 @@ public class SessionServiceImpl implements SessionService {
     }
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public SessionDTO createSession(SessionDTO sessionDTO) {
         Session session = sessionMapper.toEntity(sessionDTO);
         Session saved = sessionRepository.save(session);
@@ -55,6 +58,7 @@ public class SessionServiceImpl implements SessionService {
 
 
     @Override
+    @PreAuthorize("hasRole('ADMIN')")
     public void changeSessionCapacity(ChangeSessionCapacityRequest request) {
         SessionDTO sessionDTO = request.getSessionDTO();
         Session session = getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime())
