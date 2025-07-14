@@ -8,13 +8,14 @@ import com.poolapp.pool.repository.specification.builder.SubscriptionSpecificati
 import com.poolapp.pool.service.SubscriptionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-
+@PreAuthorize("hasRole('ADMIN')")
 public class SubscriptionServiceImpl implements SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
