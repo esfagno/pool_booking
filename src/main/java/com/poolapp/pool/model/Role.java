@@ -28,7 +28,7 @@ public class Role implements Serializable {
     private Integer id;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "name", columnDefinition = "role_type", nullable = false)
+    @Column(unique = true, name = "name", columnDefinition = "role_type", nullable = false)
     private RoleType name;
 
     @Column(nullable = true, columnDefinition = "TEXT")
