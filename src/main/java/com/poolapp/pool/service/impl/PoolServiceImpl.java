@@ -14,14 +14,12 @@ import com.poolapp.pool.service.PoolService;
 import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('ADMIN')")
 public class PoolServiceImpl implements PoolService {
 
     private final PoolRepository poolRepository;
