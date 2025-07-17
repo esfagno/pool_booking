@@ -83,7 +83,6 @@ public class BookingServiceImpl implements BookingService {
 
     @Transactional
     @Override
-    @PreAuthorize("hasRole('ADMIN')")
     public void deleteBooking(BookingDTO bookingDTO) {
         log.debug("Deleting booking for user: {}, session: {}", bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
         BookingId bookingId = buildBookingId(bookingDTO);
@@ -161,7 +160,6 @@ public class BookingServiceImpl implements BookingService {
         return bookingMapper.toDto(savedBooking);
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Override
     public boolean hasUserBooked(String userEmail, LocalDateTime sessionStartTime) {
         log.debug("Checking if user has booking: user={}, sessionStartTime={}", userEmail, sessionStartTime);
@@ -170,7 +168,6 @@ public class BookingServiceImpl implements BookingService {
         return result;
     }
 
-    @PreAuthorize("hasRole('ADMIN')")
     @Override
     @Transactional
     public void expirePastBookings(LocalDateTime now) {
@@ -182,7 +179,6 @@ public class BookingServiceImpl implements BookingService {
     }
 
     @Override
-    @PreAuthorize("hasRole('ADMIN')")
     public void deleteBookingsBySession(SessionDTO sessionDTO) {
         log.debug("Deleting bookings by session: {}", sessionDTO);
         Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime()).orElseThrow(() -> {

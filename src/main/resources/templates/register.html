@@ -86,13 +86,13 @@
     <h2>Регистрация</h2>
     <form id="regForm">
         <input id="email" name="email" placeholder="Email" required type="email"/>
-        <input id="password" name="password" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&]).{8,}$"
+        <input id="password" name="password" pattern="^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$"
                placeholder="Пароль (мин. 8 символов, с заглавной, цифрой и спецсимволом)" required
                title="Пароль должен содержать минимум 8 символов, включая заглавную букву, цифру и специальный символ"
                type="password"/>
         <input id="firstName" maxlength="30" minlength="2" name="firstName" placeholder="Имя" required type="text"/>
         <input id="lastName" maxlength="30" minlength="2" name="lastName" placeholder="Фамилия" required type="text"/>
-        <input id="phoneNumber" name="phoneNumber" pattern="^\\+\\d{10,15}$"
+        <input id="phoneNumber" name="phoneNumber" pattern="^\+\d{10,15}$"
                placeholder="Телефон (+71234567890)" required
                title="Телефон должен быть в формате +71234567890"
                type="tel"/>

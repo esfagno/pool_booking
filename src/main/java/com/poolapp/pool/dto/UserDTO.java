@@ -1,4 +1,4 @@
-package com.poolapp.pool.security;
+package com.poolapp.pool.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -11,7 +11,7 @@ import lombok.Setter;
 @Getter
 @Setter
 @NoArgsConstructor
-public class RegistrationRequest {
+public class UserDTO {
 
     @NotBlank
     @Email

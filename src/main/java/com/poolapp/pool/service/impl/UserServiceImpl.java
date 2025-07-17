@@ -1,6 +1,8 @@
 package com.poolapp.pool.service.impl;
 
+import com.poolapp.pool.dto.UserDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
+import com.poolapp.pool.mapper.UserMapper;
 import com.poolapp.pool.model.Role;
 import com.poolapp.pool.model.User;
 import com.poolapp.pool.model.enums.RoleType;
@@ -8,8 +10,9 @@ import com.poolapp.pool.repository.BookingRepository;
 import com.poolapp.pool.repository.RoleRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.specification.builder.RoleSpecificationBuilder;
-import com.poolapp.pool.security.RegistrationRequest;
+import com.poolapp.pool.security.JwtService;
 import com.poolapp.pool.service.UserService;
+import com.poolapp.pool.util.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,27 +30,15 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final RoleSpecificationBuilder roleSpecificationBuilder;
+    private final UserMapper userMapper;
+    private final JwtService jwtService;
 
     @Override
-    public User registerUser(RegistrationRequest request) {
-        if (userRepository.existsByEmail(request.getEmail())) {
-            throw new ModelNotFoundException("Email уже занят");
-        }
-
-        Specification<Role> spec = roleSpecificationBuilder.buildSpecification(RoleType.USER);
-        Role userRole = roleRepository.findOne(spec)
-                .orElseThrow(() -> new RuntimeException("Роль ROLE_USER не найдена в базе"));
-
-        User user = new User();
-        user.setEmail(request.getEmail());
-        user.setPasswordHash(passwordEncoder.encode(request.getPassword()));
-        user.setRole(userRole);
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setPhoneNumber(request.getPhoneNumber());
-        user.setCreatedAt(LocalDateTime.now());
-
-        return userRepository.save(user);
+    public UserDTO createUser(UserDTO userDTO) {
+        Role userRole = getRoleByType(RoleType.USER);
+        User user = createUserFromDTO(userDTO, userRole);
+        User saved = userRepository.save(user);
+        return userMapper.toDto(saved);
     }
 
     public Optional<User> findUserByEmail(String email) {
@@ -60,5 +51,20 @@ public class UserServiceImpl implements UserService {
                 .map(user -> bookingRepository.existsByUserIdAndSessionStartTimeAfter(user.getId(), currentTime))
                 .orElse(false);
     }
+
+    private User createUserFromDTO(UserDTO userDTO, Role role) {
+        User user = userMapper.toEntity(userDTO);
+        user.setPasswordHash(passwordEncoder.encode(userDTO.getPassword()));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setRole(role);
+        return user;
+    }
+
+    private Role getRoleByType(RoleType roleType) {
+        Specification<Role> spec = roleSpecificationBuilder.buildSpecification(roleType);
+        return roleRepository.findOne(spec)
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND));
+    }
+
 }
 

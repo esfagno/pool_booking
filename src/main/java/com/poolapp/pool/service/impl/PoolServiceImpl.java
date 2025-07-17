@@ -45,7 +45,6 @@ public class PoolServiceImpl implements PoolService {
 
     }
 
-
     @Override
     public List<PoolDTO> searchPools(PoolDTO filterDto) {
         Pool filter = poolMapper.toEntity(filterDto);
