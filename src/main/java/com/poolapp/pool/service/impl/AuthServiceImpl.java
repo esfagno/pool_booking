@@ -11,6 +11,7 @@ import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.specification.builder.RoleSpecificationBuilder;
 import com.poolapp.pool.security.JwtAuthenticationResponse;
 import com.poolapp.pool.security.JwtService;
+import com.poolapp.pool.security.LoginRequest;
 import com.poolapp.pool.security.UserDetailsImpl;
 import com.poolapp.pool.service.AuthService;
 import com.poolapp.pool.service.UserService;
@@ -49,11 +50,11 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
-    public JwtAuthenticationResponse authenticate(String email, String password) {
-        var authentication = new UsernamePasswordAuthenticationToken(email, password);
+    public JwtAuthenticationResponse authenticate(LoginRequest request) {
+        var authentication = new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
         authenticationManager.authenticate(authentication);
 
-        User user = userRepository.findByEmail(email).orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND));
+        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND));
 
         UserDetailsImpl userDetails = new UserDetailsImpl(user);
         String jwtToken = jwtService.generateToken(userDetails);

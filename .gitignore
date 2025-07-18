@@ -42,7 +42,3 @@ META-INF.maven/
 booking2.iml
 
 notes
-src/main/java/com/poolapp/pool/controller/RegistrationController.java
-src/main/java/com/poolapp/pool/controller/SuccessController.java
-src/main/java/com/poolapp/pool/controller/LoginController.java
-src/main/resources/templates

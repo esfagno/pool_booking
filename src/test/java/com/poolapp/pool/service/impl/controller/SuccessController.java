@@ -1,4 +1,4 @@
-package com.poolapp.pool.controller;
+package com.poolapp.pool.service.impl.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
