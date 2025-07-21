@@ -2,7 +2,7 @@ package com.poolapp.pool.controller;
 
 import com.poolapp.pool.dto.UserDTO;
 import com.poolapp.pool.security.JwtAuthenticationResponse;
-import com.poolapp.pool.security.LoginRequest;
+import com.poolapp.pool.security.UserLoginRequest;
 import com.poolapp.pool.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<JwtAuthenticationResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<JwtAuthenticationResponse> login(@RequestBody UserLoginRequest request) {
         JwtAuthenticationResponse response = authService.authenticate(request);
         return ResponseEntity.ok(response);
     }

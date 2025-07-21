@@ -14,6 +14,7 @@ public final class ErrorMessages {
     public static final String USER_SUBSCRIPTION_NOT_FOUND = "User subscription not found: ";
     public static final String USER_SUBSCRIPTION_EXPIRED = "User subscription expired: ";
     public static final String EMAIL_IS_TAKEN = "Email is taken:";
+    public static final String ROLE_NOT_FOUND = "Role not found:";
 
     private ErrorMessages() {
     }

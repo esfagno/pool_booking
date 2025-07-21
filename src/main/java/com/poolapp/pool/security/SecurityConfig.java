@@ -47,6 +47,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/pools/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/users/*/subs").hasRole("ADMIN")
                         .requestMatchers("/api/pools/*/load").hasRole("ADMIN")
+                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(sess -> sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
