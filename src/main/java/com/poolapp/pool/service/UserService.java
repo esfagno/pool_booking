@@ -14,6 +14,6 @@ public interface UserService {
 
     boolean hasActiveBooking(String email, LocalDateTime currentTime);
 
-    void modifyUser(UserUpdateDTO dto, String requesterEmail, boolean isAdmin);
+    UserDTO modifyUser(UserUpdateDTO dto);
 }
 

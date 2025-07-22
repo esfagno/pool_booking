@@ -11,10 +11,10 @@ import com.poolapp.pool.repository.BookingRepository;
 import com.poolapp.pool.repository.RoleRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.specification.builder.RoleSpecificationBuilder;
-import com.poolapp.pool.security.JwtService;
 import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.util.ErrorMessages;
 import com.poolapp.pool.util.ForbiddenOperationException;
+import com.poolapp.pool.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -34,7 +34,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordEncoder passwordEncoder;
     private final RoleSpecificationBuilder roleSpecificationBuilder;
     private final UserMapper userMapper;
-    private final JwtService jwtService;
+    private final SecurityUtil securityUtil;
 
     @Override
     public UserDTO createUser(UserDTO userDTO) {
@@ -44,42 +44,27 @@ public class UserServiceImpl implements UserService {
         return userMapper.toDto(saved);
     }
 
+    @Override
     @Transactional
-    public void modifyUser(UserUpdateDTO dto, String requesterEmail, boolean isAdmin) {
-        User requester = findUserByEmail(requesterEmail)
+    public UserDTO modifyUser(UserUpdateDTO dto) {
+
+        User requester = securityUtil.getCurrentUser();
+        User target = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND));
 
-        User target = findUserByEmail(dto.getEmail())
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND));
-
-        boolean isChangingOwnData = requester.getEmail().equals(dto.getEmail());
-        boolean isChangingOwnRole = dto.getRole() != null && isChangingOwnData;
-
-        if (!isAdmin && !isChangingOwnData) {
-            throw new ForbiddenOperationException("Вы не можете изменять других пользователей");
-        }
-
+        validatePermissions(requester, target, dto.getRole());
         if (dto.getRole() != null) {
-            if (!isAdmin) {
-                throw new ForbiddenOperationException("Вы не можете изменять роль");
-            }
-            if (isChangingOwnRole) {
-                throw new ForbiddenOperationException("Вы не можете изменять свою роль");
-            }
-            Role newRole = roleRepository.findOne(roleSpecificationBuilder.buildSpecification(dto.getRole()))
-                    .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.ROLE_NOT_FOUND));
+            Role newRole = getRoleByType(dto.getRole());
             target.setRole(newRole);
         }
 
         userMapper.updateUserFromUpdateDto(target, dto);
-
-        if (dto.getPassword() != null) {
+        if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
             target.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
         }
 
-        userRepository.save(target);
+        return userMapper.toDto(userRepository.save(target));
     }
-
 
     public Optional<User> findUserByEmail(String email) {
         return userRepository.findByEmail(email);
@@ -101,6 +86,17 @@ public class UserServiceImpl implements UserService {
     private Role getRoleByType(RoleType roleType) {
         Specification<Role> spec = roleSpecificationBuilder.buildSpecification(roleType);
         return roleRepository.findOne(spec).orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND));
+    }
+
+    private void validatePermissions(User requester, User target, RoleType requestedRole) {
+        boolean isAdmin = securityUtil.isCurrentUserAdmin();
+        boolean isOwn = requester.getEmail().equals(target.getEmail());
+        boolean roleChangeAttempt = requestedRole != null;
+
+        if ((roleChangeAttempt && (!isAdmin || isOwn))
+                || (!isOwn && !isAdmin)) {
+            throw new ForbiddenOperationException(ErrorMessages.FORBIDDEN_OPERATION);
+        }
     }
 
 }
