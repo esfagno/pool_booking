@@ -13,15 +13,15 @@ import org.springframework.web.bind.annotation.RestController;
 import java.security.Principal;
 
 @RestController
-@RequestMapping("/api/admin")
+@RequestMapping("/api/user")
 @RequiredArgsConstructor
-public class AdminController {
+public class UserController {
 
     private final UserService userService;
 
     @PatchMapping("/modify")
-    public ResponseEntity<Void> modifyUserAsAdmin(@Valid @RequestBody UserUpdateDTO dto, Principal principal) {
-        userService.modifyUser(dto, principal.getName(), true);
+    public ResponseEntity<Void> modifyUserAsUser(@Valid @RequestBody UserUpdateDTO dto, Principal principal) {
+        userService.modifyUser(dto, principal.getName(), false);
         return ResponseEntity.ok().build();
     }
 

@@ -1,6 +1,7 @@
 package com.poolapp.pool.mapper;
 
 import com.poolapp.pool.dto.UserDTO;
+import com.poolapp.pool.dto.UserUpdateDTO;
 import com.poolapp.pool.model.User;
 import org.mapstruct.Builder;
 import org.mapstruct.CollectionMappingStrategy;
@@ -37,5 +38,14 @@ public interface UserMapper {
     @Mapping(target = "passwordHash", ignore = true)
     @Mapping(target = "role", ignore = true)
     void updateUserFromDto(@MappingTarget User user, UserDTO dto);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "role", ignore = true)
+    @Mapping(target = "passwordHash", ignore = true)
+    void updateUserFromUpdateDto(@MappingTarget User user, UserUpdateDTO dto);
+
+
 }
 

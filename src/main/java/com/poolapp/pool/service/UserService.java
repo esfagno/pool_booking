@@ -1,6 +1,7 @@
 package com.poolapp.pool.service;
 
 import com.poolapp.pool.dto.UserDTO;
+import com.poolapp.pool.dto.UserUpdateDTO;
 import com.poolapp.pool.model.User;
 
 import java.time.LocalDateTime;
@@ -12,5 +13,7 @@ public interface UserService {
     UserDTO createUser(UserDTO userDTO);
 
     boolean hasActiveBooking(String email, LocalDateTime currentTime);
+
+    void modifyUser(UserUpdateDTO dto, String requesterEmail, boolean isAdmin);
 }
 
