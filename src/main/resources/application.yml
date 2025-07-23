@@ -38,8 +38,3 @@ logging:
 token:
   signing:
     key: "9vJsoj+ls24tEyJS0PV64P3pNuNJvsG5fxjKrfstPqU="
-  expiration:
-    access:
-      ms: 900000
-    refresh:
-      ms: 604800000
