@@ -12,4 +12,5 @@ import lombok.NoArgsConstructor;
 public class JwtAuthenticationResponse {
     private String accessToken;
     private String refreshToken;
+    private long expiresAt;
 }

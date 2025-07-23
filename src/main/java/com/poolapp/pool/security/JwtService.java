@@ -1,6 +1,7 @@
 package com.poolapp.pool.security;
 
 import com.poolapp.pool.model.User;
+import com.poolapp.pool.util.JwtConstants;
 import com.poolapp.pool.util.exception.ErrorMessages;
 import com.poolapp.pool.util.exception.ForbiddenOperationException;
 import com.poolapp.pool.util.exception.InvalidTokenException;
@@ -39,13 +40,11 @@ public class JwtService {
     }
 
     public String generateAccessToken(UserDetails userDetails) {
-        long accessTokenMs = 15 * 60 * 1000;
-        return generateToken(userDetails, accessTokenMs);
+        return generateToken(userDetails, JwtConstants.ACCESS_TOKEN_EXPIRATION_MS);
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        long refreshTokenMs = 7 * 24 * 60 * 60 * 1000;
-        return generateToken(userDetails, refreshTokenMs);
+        return generateToken(userDetails, JwtConstants.REFRESH_TOKEN_EXPIRATION_MS);
     }
 
     private String generateToken(UserDetails userDetails, long expirationMs) {
@@ -70,10 +69,12 @@ public class JwtService {
             }
 
             String newAccessToken = generateAccessToken(userDetails);
+            long expiresAt = System.currentTimeMillis() + JwtConstants.ACCESS_TOKEN_EXPIRATION_MS;
 
             return JwtAuthenticationResponse.builder()
                     .accessToken(newAccessToken)
                     .refreshToken(refreshToken)
+                    .expiresAt(expiresAt)
                     .build();
         } catch (ExpiredJwtException e) {
             throw new ForbiddenOperationException(ErrorMessages.REFRESH_TOKEN);
