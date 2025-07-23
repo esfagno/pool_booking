@@ -70,11 +70,10 @@ public class JwtService {
             }
 
             String newAccessToken = generateAccessToken(userDetails);
-            String newRefreshToken = generateRefreshToken(userDetails);
 
             return JwtAuthenticationResponse.builder()
                     .accessToken(newAccessToken)
-                    .refreshToken(newRefreshToken)
+                    .refreshToken(refreshToken)
                     .build();
         } catch (ExpiredJwtException e) {
             throw new ForbiddenOperationException(ErrorMessages.REFRESH_TOKEN);
