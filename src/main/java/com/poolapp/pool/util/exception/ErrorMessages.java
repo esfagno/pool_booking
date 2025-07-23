@@ -1,4 +1,4 @@
-package com.poolapp.pool.util;
+package com.poolapp.pool.util.exception;
 
 public final class ErrorMessages {
     public static final String POOL_NOT_FOUND = "Pool not found:";
@@ -16,6 +16,7 @@ public final class ErrorMessages {
     public static final String EMAIL_IS_TAKEN = "Email is taken:";
     public static final String ROLE_NOT_FOUND = "Role not found:";
     public static final String FORBIDDEN_OPERATION = "Forbidden operation:";
+    public static final String REFRESH_TOKEN = "Refresh token is invalid or expired";
 
     private ErrorMessages() {
     }

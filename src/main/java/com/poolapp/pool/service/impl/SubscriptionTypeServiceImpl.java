@@ -7,7 +7,7 @@ import com.poolapp.pool.model.SubscriptionType;
 import com.poolapp.pool.repository.SubscriptionTypeRepository;
 import com.poolapp.pool.repository.specification.builder.SubscriptionTypeSpecificationBuilder;
 import com.poolapp.pool.service.SubscriptionTypeService;
-import com.poolapp.pool.util.ErrorMessages;
+import com.poolapp.pool.util.exception.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;

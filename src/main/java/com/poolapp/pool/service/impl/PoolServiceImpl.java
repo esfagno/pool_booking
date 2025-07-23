@@ -11,7 +11,7 @@ import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.PoolScheduleRepository;
 import com.poolapp.pool.repository.specification.builder.PoolSpecificationBuilder;
 import com.poolapp.pool.service.PoolService;
-import com.poolapp.pool.util.ErrorMessages;
+import com.poolapp.pool.util.exception.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;

@@ -39,6 +39,7 @@ token:
   signing:
     key: "9vJsoj+ls24tEyJS0PV64P3pNuNJvsG5fxjKrfstPqU="
   expiration:
-    ms: 3600000
-  clock-skew:
-    seconds: 60
+    access:
+      ms: 900000
+    refresh:
+      ms: 604800000

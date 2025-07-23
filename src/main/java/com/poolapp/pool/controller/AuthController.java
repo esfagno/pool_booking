@@ -2,6 +2,8 @@ package com.poolapp.pool.controller;
 
 import com.poolapp.pool.dto.UserDTO;
 import com.poolapp.pool.security.JwtAuthenticationResponse;
+import com.poolapp.pool.security.JwtService;
+import com.poolapp.pool.security.RefreshTokenRequest;
 import com.poolapp.pool.security.UserLoginRequest;
 import com.poolapp.pool.service.AuthService;
 import jakarta.validation.Valid;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtService jwtService;
 
     @PostMapping("/register")
     public ResponseEntity<JwtAuthenticationResponse> register(@Valid @RequestBody UserDTO userDTO) {
@@ -30,4 +33,11 @@ public class AuthController {
         JwtAuthenticationResponse response = authService.authenticate(request);
         return ResponseEntity.ok(response);
     }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<JwtAuthenticationResponse> refreshToken(@RequestBody RefreshTokenRequest request) {
+        JwtAuthenticationResponse response = jwtService.refreshToken(request);
+        return ResponseEntity.ok(response);
+    }
+
 }

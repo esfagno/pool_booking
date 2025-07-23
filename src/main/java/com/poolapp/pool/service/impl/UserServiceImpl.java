@@ -12,9 +12,9 @@ import com.poolapp.pool.repository.RoleRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.specification.builder.RoleSpecificationBuilder;
 import com.poolapp.pool.service.UserService;
-import com.poolapp.pool.util.ErrorMessages;
-import com.poolapp.pool.util.ForbiddenOperationException;
+import com.poolapp.pool.util.exception.ErrorMessages;
 import com.poolapp.pool.util.SecurityUtil;
+import com.poolapp.pool.util.exception.ForbiddenOperationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -36,12 +36,28 @@ public class UserServiceImpl implements UserService {
     private final UserMapper userMapper;
     private final SecurityUtil securityUtil;
 
+
     @Override
-    public UserDTO createUser(UserDTO userDTO) {
-        Role userRole = getRoleByType(RoleType.USER);
-        User user = createUserFromDTO(userDTO, userRole);
+    public UserDTO createWithRole(UserDTO dto, RoleType roleType) {
+        Role role = getRoleByType(roleType);
+
+        User user = userMapper.toEntity(dto);
+        user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
+        user.setCreatedAt(LocalDateTime.now());
+        user.setRole(role);
+
         User saved = userRepository.save(user);
         return userMapper.toDto(saved);
+    }
+
+    @Override
+    public UserDTO createUser(UserDTO dto) {
+        return createWithRole(dto, RoleType.USER);
+    }
+
+    @Override
+    public UserDTO createAdmin(UserDTO dto) {
+        return createWithRole(dto, RoleType.ADMIN);
     }
 
     @Override
@@ -73,14 +89,6 @@ public class UserServiceImpl implements UserService {
 
     public boolean hasActiveBooking(String email, LocalDateTime currentTime) {
         return findUserByEmail(email).map(user -> bookingRepository.existsByUserIdAndSessionStartTimeAfter(user.getId(), currentTime)).orElse(false);
-    }
-
-    private User createUserFromDTO(UserDTO userDTO, Role role) {
-        User user = userMapper.toEntity(userDTO);
-        user.setPasswordHash(passwordEncoder.encode(userDTO.getPassword()));
-        user.setCreatedAt(LocalDateTime.now());
-        user.setRole(role);
-        return user;
     }
 
     private Role getRoleByType(RoleType roleType) {

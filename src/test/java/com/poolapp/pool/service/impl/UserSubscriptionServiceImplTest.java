@@ -18,7 +18,7 @@ import com.poolapp.pool.repository.UserSubscriptionRepository;
 import com.poolapp.pool.repository.specification.builder.SubscriptionSpecificationBuilder;
 import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecificationBuilder;
 import com.poolapp.pool.service.UserService;
-import com.poolapp.pool.util.ErrorMessages;
+import com.poolapp.pool.util.exception.ErrorMessages;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

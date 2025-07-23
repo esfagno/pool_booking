@@ -3,6 +3,7 @@ package com.poolapp.pool.util;
 import com.poolapp.pool.model.User;
 import com.poolapp.pool.model.enums.RoleType;
 import com.poolapp.pool.security.UserDetailsImpl;
+import com.poolapp.pool.util.exception.ErrorMessages;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;

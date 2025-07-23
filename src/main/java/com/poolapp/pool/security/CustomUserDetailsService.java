@@ -2,7 +2,7 @@ package com.poolapp.pool.security;
 
 import com.poolapp.pool.model.User;
 import com.poolapp.pool.repository.UserRepository;
-import com.poolapp.pool.util.ErrorMessages;
+import com.poolapp.pool.util.exception.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

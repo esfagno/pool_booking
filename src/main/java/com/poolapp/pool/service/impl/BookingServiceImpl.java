@@ -22,11 +22,10 @@ import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.service.UserSubscriptionService;
 import com.poolapp.pool.util.CapacityOperation;
 import com.poolapp.pool.util.ChangeSessionCapacityRequest;
-import com.poolapp.pool.util.ErrorMessages;
+import com.poolapp.pool.util.exception.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +36,6 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@PreAuthorize("isAuthenticated()")
 public class BookingServiceImpl implements BookingService {
 
     private final BookingRepository bookingRepository;
