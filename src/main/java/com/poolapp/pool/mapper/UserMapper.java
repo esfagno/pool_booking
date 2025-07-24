@@ -1,7 +1,6 @@
 package com.poolapp.pool.mapper;
 
 import com.poolapp.pool.dto.UserDTO;
-import com.poolapp.pool.dto.UserUpdateDTO;
 import com.poolapp.pool.model.User;
 import org.mapstruct.BeanMapping;
 import org.mapstruct.Builder;
@@ -29,6 +28,7 @@ public interface UserMapper {
     User toEntity(UserDTO dto);
 
     @Mapping(target = "password", ignore = true)
+    @Mapping(target = "roleType", ignore = true)
     UserDTO toDto(User user);
 
     @Mapping(target = "password_hash", ignore = true)
@@ -39,16 +39,8 @@ public interface UserMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "passwordHash", ignore = true)
     @Mapping(target = "role", ignore = true)
-    void updateUserFromDto(@MappingTarget User user, UserDTO dto);
-
-    @Mapping(target = "id", ignore = true)
-    @Mapping(target = "createdAt", ignore = true)
-    @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "role", ignore = true)
-    @Mapping(target = "passwordHash", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateUserFromUpdateDto(@MappingTarget User user, UserUpdateDTO dto);
-
+    void updateUserFromDto(@MappingTarget User user, UserDTO dto);
 
 }
 

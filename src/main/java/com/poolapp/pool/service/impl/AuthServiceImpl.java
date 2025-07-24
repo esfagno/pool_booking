@@ -4,6 +4,7 @@ import com.poolapp.pool.dto.UserDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.mapper.UserMapper;
 import com.poolapp.pool.model.User;
+import com.poolapp.pool.model.enums.RoleType;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.security.JwtAuthenticationResponse;
 import com.poolapp.pool.security.JwtService;
@@ -34,7 +35,7 @@ public class AuthServiceImpl implements AuthService {
             throw new EntityAlreadyExistsException(ErrorMessages.EMAIL_IS_TAKEN);
         }
 
-        User user = userMapper.toEntity(userService.createUser(userDTO));
+        User user = userMapper.toEntity(userService.createUser(userDTO, RoleType.USER));
         UserDetailsImpl userDetails = new UserDetailsImpl(user);
 
         String accessToken = jwtService.generateAccessToken(userDetails);

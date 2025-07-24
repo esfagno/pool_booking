@@ -1,7 +1,6 @@
 package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.UserDTO;
-import com.poolapp.pool.dto.UserUpdateDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.mapper.UserMapper;
 import com.poolapp.pool.model.Role;
@@ -38,7 +37,7 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public UserDTO createWithRole(UserDTO dto, RoleType roleType) {
+    public UserDTO createUser(UserDTO dto, RoleType roleType) {
         Role role = getRoleByType(roleType);
 
         User user = userMapper.toEntity(dto);
@@ -51,30 +50,20 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDTO createUser(UserDTO dto) {
-        return createWithRole(dto, RoleType.USER);
-    }
-
-    @Override
-    public UserDTO createAdmin(UserDTO dto) {
-        return createWithRole(dto, RoleType.ADMIN);
-    }
-
-    @Override
     @Transactional
-    public UserDTO modifyUser(UserUpdateDTO dto) {
+    public UserDTO modifyUser(UserDTO dto) {
 
         User requester = securityUtil.getCurrentUser();
         User target = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND));
 
-        validatePermissions(requester, target, dto.getRole());
-        if (dto.getRole() != null) {
-            Role newRole = getRoleByType(dto.getRole());
+        validatePermissions(requester, target, dto.getRoleType());
+        if (dto.getRoleType() != null) {
+            Role newRole = getRoleByType(dto.getRoleType());
             target.setRole(newRole);
         }
 
-        userMapper.updateUserFromUpdateDto(target, dto);
+        userMapper.updateUserFromDto(target, dto);
         if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
             target.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
         }

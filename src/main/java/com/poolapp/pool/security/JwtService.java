@@ -74,7 +74,6 @@ public class JwtService {
             return JwtAuthenticationResponse.builder()
                     .accessToken(newAccessToken)
                     .refreshToken(refreshToken)
-                    .expiresAt(expiresAt)
                     .build();
         } catch (ExpiredJwtException e) {
             throw new ForbiddenOperationException(ErrorMessages.REFRESH_TOKEN);

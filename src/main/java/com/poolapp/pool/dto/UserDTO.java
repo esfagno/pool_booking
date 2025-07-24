@@ -1,5 +1,6 @@
 package com.poolapp.pool.dto;
 
+import com.poolapp.pool.model.enums.RoleType;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -33,4 +34,6 @@ public class UserDTO {
     @NotBlank
     @Pattern(regexp = "^\\+\\d{10,15}$")
     private String phoneNumber;
+
+    private RoleType roleType;
 }
