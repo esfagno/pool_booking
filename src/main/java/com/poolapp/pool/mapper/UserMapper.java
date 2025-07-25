@@ -1,5 +1,6 @@
 package com.poolapp.pool.mapper;
 
+import com.poolapp.pool.dto.UpdateUserDTO;
 import com.poolapp.pool.dto.UserDTO;
 import com.poolapp.pool.model.User;
 import org.mapstruct.BeanMapping;
@@ -40,7 +41,7 @@ public interface UserMapper {
     @Mapping(target = "passwordHash", ignore = true)
     @Mapping(target = "role", ignore = true)
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
-    void updateUserFromDto(@MappingTarget User user, UserDTO dto);
+    void updateUserFromUpdateDto(@MappingTarget User user, UpdateUserDTO dto);
 
 }
 

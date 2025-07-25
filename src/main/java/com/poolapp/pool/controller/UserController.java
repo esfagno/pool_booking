@@ -1,5 +1,6 @@
 package com.poolapp.pool.controller;
 
+import com.poolapp.pool.dto.UpdateUserDTO;
 import com.poolapp.pool.dto.UserDTO;
 import com.poolapp.pool.service.UserService;
 import jakarta.validation.Valid;
@@ -19,14 +20,14 @@ public class UserController {
     private final UserService userService;
 
     @PatchMapping("/modify")
-    public ResponseEntity<UserDTO> modifyUser(@Valid @RequestBody UserDTO dto) {
+    public ResponseEntity<UserDTO> modifyUser(@Valid @RequestBody UpdateUserDTO dto) {
         UserDTO updatedUser = userService.modifyUser(dto);
         return ResponseEntity.ok(updatedUser);
     }
 
     @PostMapping("/create")
     public ResponseEntity<UserDTO> createUser(@Valid @RequestBody UserDTO dto) {
-        UserDTO created = userService.createUser(dto, dto.getRoleType());
+        UserDTO created = userService.createUser(dto);
         return ResponseEntity.ok(created);
     }
 }

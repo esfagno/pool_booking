@@ -35,7 +35,8 @@ public class AuthServiceImpl implements AuthService {
             throw new EntityAlreadyExistsException(ErrorMessages.EMAIL_IS_TAKEN);
         }
 
-        User user = userMapper.toEntity(userService.createUser(userDTO, RoleType.USER));
+        userDTO.setRoleType(RoleType.USER);
+        User user = userMapper.toEntity(userService.createUser(userDTO));
         UserDetailsImpl userDetails = new UserDetailsImpl(user);
 
         String accessToken = jwtService.generateAccessToken(userDetails);

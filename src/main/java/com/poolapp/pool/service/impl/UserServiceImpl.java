@@ -1,5 +1,6 @@
 package com.poolapp.pool.service.impl;
 
+import com.poolapp.pool.dto.UpdateUserDTO;
 import com.poolapp.pool.dto.UserDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.mapper.UserMapper;
@@ -15,7 +16,6 @@ import com.poolapp.pool.util.SecurityUtil;
 import com.poolapp.pool.util.exception.ErrorMessages;
 import com.poolapp.pool.util.exception.ForbiddenOperationException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -37,8 +37,8 @@ public class UserServiceImpl implements UserService {
 
 
     @Override
-    public UserDTO createUser(UserDTO dto, RoleType roleType) {
-        Role role = getRoleByType(roleType);
+    public UserDTO createUser(UserDTO dto) {
+        Role role = getRoleByType(dto.getRoleType());
 
         User user = userMapper.toEntity(dto);
         user.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
@@ -51,7 +51,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserDTO modifyUser(UserDTO dto) {
+    public UserDTO modifyUser(UpdateUserDTO dto) {
 
         User requester = securityUtil.getCurrentUser();
         User target = userRepository.findByEmail(dto.getEmail())
@@ -63,7 +63,7 @@ public class UserServiceImpl implements UserService {
             target.setRole(newRole);
         }
 
-        userMapper.updateUserFromDto(target, dto);
+        userMapper.updateUserFromUpdateDto(target, dto);
         if (dto.getPassword() != null && !dto.getPassword().trim().isEmpty()) {
             target.setPasswordHash(passwordEncoder.encode(dto.getPassword()));
         }
@@ -81,8 +81,8 @@ public class UserServiceImpl implements UserService {
     }
 
     private Role getRoleByType(RoleType roleType) {
-        Specification<Role> spec = roleSpecificationBuilder.buildSpecification(roleType);
-        return roleRepository.findOne(spec).orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND));
+        return roleRepository.findByName(roleType)
+                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.ROLE_NOT_FOUND));
     }
 
     private void validatePermissions(User requester, User target, RoleType requestedRole) {
