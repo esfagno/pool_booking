@@ -12,7 +12,7 @@ import com.poolapp.pool.repository.RoleRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.util.SecurityUtil;
-import com.poolapp.pool.util.exception.ErrorMessages;
+import com.poolapp.pool.util.exception.ApiErrorCode;
 import com.poolapp.pool.util.exception.ForbiddenOperationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -53,7 +53,7 @@ public class UserServiceImpl implements UserService {
     public UserDTO modifyUser(UpdateUserDTO dto) {
         User requester = securityUtil.getCurrentUser();
         User target = userRepository.findByEmail(dto.getEmail())
-                .orElseThrow(() -> new ModelNotFoundException(String.format(ErrorMessages.USER_NOT_FOUND, "email: " + dto.getEmail())));
+                .orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, dto.getEmail()));
 
         validatePermissions(requester, target, dto.getRoleType());
 
@@ -83,21 +83,25 @@ public class UserServiceImpl implements UserService {
 
     private Role getRoleByType(RoleType roleType) {
         return roleRepository.findByName(roleType)
-                .orElseThrow(() -> new ModelNotFoundException(String.format(ErrorMessages.ROLE_NOT_FOUND, roleType)));
+                .orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, roleType.name()));
     }
 
     private void validatePermissions(User requester, User target, RoleType requestedRole) {
-        boolean isAdmin = securityUtil.isCurrentUserAdmin();
-        boolean isOwn = requester.getEmail().equals(target.getEmail());
-        boolean roleChangeAttempt = requestedRole != null;
+        checkRoleChangePermission(requester, requestedRole);
+        checkModifyOtherUserPermission(requester, target);
+    }
 
-        if (roleChangeAttempt) {
-            if (!isAdmin) {
-                log.warn("User {} (email: {}) attempted to change role to {} without admin privileges",
-                        requester.getId(), requester.getEmail(), requestedRole);
-                throw new ForbiddenOperationException(ROLE_CHANGE_NOT_ALLOWED);
-            }
+    private void checkRoleChangePermission(User requester, RoleType requestedRole) {
+        if (requestedRole != null && !securityUtil.isCurrentUserAdmin()) {
+            log.warn("User {} (email: {}) attempted to change role to {} without admin privileges",
+                    requester.getId(), requester.getEmail(), requestedRole);
+            throw new ForbiddenOperationException(ROLE_CHANGE_NOT_ALLOWED);
         }
+    }
+
+    private void checkModifyOtherUserPermission(User requester, User target) {
+        boolean isOwn = requester.getEmail().equals(target.getEmail());
+        boolean isAdmin = securityUtil.isCurrentUserAdmin();
 
         if (!isOwn && !isAdmin) {
             log.warn("User {} (email: {}) attempted to modify another user {} without admin privileges",
@@ -105,4 +109,5 @@ public class UserServiceImpl implements UserService {
             throw new ForbiddenOperationException(MODIFY_OTHER_USER_NOT_ALLOWED);
         }
     }
+
 }

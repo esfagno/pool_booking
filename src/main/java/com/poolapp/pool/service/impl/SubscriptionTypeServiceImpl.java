@@ -7,7 +7,7 @@ import com.poolapp.pool.model.SubscriptionType;
 import com.poolapp.pool.repository.SubscriptionTypeRepository;
 import com.poolapp.pool.repository.specification.builder.SubscriptionTypeSpecificationBuilder;
 import com.poolapp.pool.service.SubscriptionTypeService;
-import com.poolapp.pool.util.exception.ErrorMessages;
+import com.poolapp.pool.util.exception.ApiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
@@ -65,7 +65,7 @@ public class SubscriptionTypeServiceImpl implements SubscriptionTypeService {
         log.debug("Searching for SubscriptionType by name: {}", name);
         return subscriptionTypeRepository.findByName(name).orElseThrow(() -> {
             log.warn("SubscriptionType not found: {}", name);
-            return new ModelNotFoundException(String.format(ErrorMessages.SUBSCRIPTION_NOT_FOUND, name));
+            return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, name);
         });
     }
 

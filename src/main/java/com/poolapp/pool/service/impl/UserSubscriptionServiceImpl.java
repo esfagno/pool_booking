@@ -16,6 +16,7 @@ import com.poolapp.pool.repository.specification.builder.SubscriptionSpecificati
 import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecificationBuilder;
 import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.service.UserSubscriptionService;
+import com.poolapp.pool.util.exception.ApiErrorCode;
 import com.poolapp.pool.util.exception.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,13 +45,13 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         log.info("Creating UserSubscription for user: {}", userSubscriptionDTO.getUserEmail());
         User user = userRepository.findByEmail(userSubscriptionDTO.getUserEmail()).orElseThrow(() -> {
             log.warn("User not found: {}", userSubscriptionDTO.getUserEmail());
-            return new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND);
+            return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, userSubscriptionDTO.getUserEmail());
         });
 
         Specification<Subscription> spec = subscriptionSpecificationBuilder.buildSpecification(userSubscriptionDTO.getSubscriptionDTO());
         Subscription subscription = subscriptionRepository.findOne(spec).orElseThrow(() -> {
             log.warn("Subscription not found: status={}, type={}", userSubscriptionDTO.getSubscriptionDTO().getStatus(), userSubscriptionDTO.getSubscriptionDTO().getSubscriptionTypeDTO().getName());
-            return new ModelNotFoundException(ErrorMessages.SUBSCRIPTION_NOT_FOUND);
+            return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, userSubscriptionDTO.getUserEmail());
         });
 
 
@@ -68,7 +69,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     public UserSubscriptionDTO updateUserSubscription(UserSubscriptionDTO userSubscriptionDTO) {
         UserSubscription userSubscription = findUserSubscriptionByDTO(userSubscriptionDTO).orElseThrow(() -> {
             log.warn("UserSubscription not found for update: user={}", userSubscriptionDTO.getUserEmail());
-            return new ModelNotFoundException(ErrorMessages.USER_SUBSCRIPTION_NOT_FOUND);
+            return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, userSubscriptionDTO.getUserEmail());
         });
 
         userSubscriptionMapper.updateUserSubscriptionFromDto(userSubscription, userSubscriptionDTO);
@@ -83,7 +84,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         log.info("Deleting UserSubscription for user: {}", userSubscriptionDTO.getUserEmail());
         UserSubscription userSubscription = findUserSubscriptionByDTO(userSubscriptionDTO).orElseThrow(() -> {
             log.warn("UserSubscription not found for deletion: user={}", userSubscriptionDTO.getUserEmail());
-            return new ModelNotFoundException(ErrorMessages.USER_SUBSCRIPTION_NOT_FOUND);
+            return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, userSubscriptionDTO.getUserEmail());
         });
         userSubscriptionRepository.deleteById(userSubscription.getId());
         log.info("UserSubscription deleted: id={}", userSubscription.getId());
@@ -107,7 +108,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         log.debug("Checking if UserSubscription is expired for user: {}", userSubscriptionDTO.getUserEmail());
         UserSubscription filter = findUserSubscriptionByDTO(userSubscriptionDTO).orElseThrow(() -> {
             log.warn("UserSubscription not found during expiration check: user={}", userSubscriptionDTO.getUserEmail());
-            return new ModelNotFoundException(ErrorMessages.USER_SUBSCRIPTION_NOT_FOUND);
+            return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, userSubscriptionDTO.getUserEmail());
         });
         LocalDateTime expirationDate = filter.getAssignedAt().plusDays(filter.getSubscription().getSubscriptionType().getDurationDays());
         boolean expired = expirationDate.isBefore(now);

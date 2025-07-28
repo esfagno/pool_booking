@@ -6,7 +6,6 @@ import com.poolapp.pool.util.exception.ApiErrorMessages;
 import com.poolapp.pool.util.exception.ApiErrorResponse;
 import com.poolapp.pool.util.exception.EntityAlreadyExistsException;
 import com.poolapp.pool.util.exception.ForbiddenOperationException;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -46,35 +45,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(errorResponse);
     }
 
-    @ExceptionHandler({EntityNotFoundException.class, ModelNotFoundException.class})
-    protected ResponseEntity<Object> handleEntityNotFound(RuntimeException ex, WebRequest request) {
+    @ExceptionHandler(ModelNotFoundException.class)
+    protected ResponseEntity<Object> handleModelNotFound(ModelNotFoundException ex, WebRequest request) {
         String errorId = UUID.randomUUID().toString();
         String path = extractPath(request);
-        ApiErrorCode errorCode;
-        String details = null;
+        String message = ApiErrorMessages.format(ex.getErrorCode().getCode(), ex.getDetail());
 
-        if (ex.getMessage() != null && ex.getMessage().contains("Pool")) {
-            errorCode = ApiErrorCode.POOL_NOT_FOUND;
-            details = extractIdFromMessage(ex.getMessage());
-        } else if (ex.getMessage() != null && ex.getMessage().contains("Role")) {
-            errorCode = ApiErrorCode.ROLE_NOT_FOUND;
-            details = extractRoleFromMessage(ex.getMessage());
-        } else {
-            errorCode = ApiErrorCode.NOT_FOUND;
-            details = ex.getMessage();
-        }
-
-        String message = ApiErrorMessages.format(errorCode.getCode(), details != null ? details : "");
-        log.warn("NOT_FOUND[{}]: {} - {}", errorId, errorCode, ex.getMessage());
-
-        ApiErrorResponse errorResponse = new ApiErrorResponse(
+        return buildErrorResponse(
                 HttpStatus.NOT_FOUND,
-                errorCode.getCode(),
+                ex.getErrorCode(),
                 path,
-                Map.of("details", details, "message", message)
+                Map.of("details", ex.getDetail(), "message", message),
+                "NOT_FOUND",
+                errorId,
+                message,
+                ex
         );
-
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
     }
 
     @ExceptionHandler(EntityAlreadyExistsException.class)
@@ -219,4 +205,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         }
         return null;
     }
+
+    private ResponseEntity<Object> buildErrorResponse(
+            HttpStatus status,
+            ApiErrorCode code,
+            String path,
+            Map<String, Object> payload,
+            String logPrefix,
+            String errorId,
+            String message,
+            Exception ex
+    ) {
+        log.warn("{}[{}]: {} - {}", logPrefix, errorId, path, ex.getMessage());
+        ApiErrorResponse errorResponse = new ApiErrorResponse(status, code.getCode(), path, payload);
+        return ResponseEntity.status(status).body(errorResponse);
+    }
+
 }

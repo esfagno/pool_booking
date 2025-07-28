@@ -12,6 +12,7 @@ import com.poolapp.pool.security.UserDetailsImpl;
 import com.poolapp.pool.security.UserLoginRequest;
 import com.poolapp.pool.service.AuthService;
 import com.poolapp.pool.service.UserService;
+import com.poolapp.pool.util.exception.ApiErrorCode;
 import com.poolapp.pool.util.exception.EntityAlreadyExistsException;
 import com.poolapp.pool.util.exception.ErrorMessages;
 import lombok.RequiredArgsConstructor;
@@ -55,7 +56,7 @@ public class AuthServiceImpl implements AuthService {
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword());
         authenticationManager.authenticate(authentication);
 
-        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ModelNotFoundException(ErrorMessages.USER_NOT_FOUND));
+        User user = userRepository.findByEmail(request.getEmail()).orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, request.getEmail()));
 
         UserDetailsImpl userDetails = new UserDetailsImpl(user);
 
