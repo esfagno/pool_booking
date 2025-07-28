@@ -32,7 +32,9 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public JwtAuthenticationResponse register(UserDTO userDTO) {
         if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
-            throw new EntityAlreadyExistsException(ErrorMessages.EMAIL_IS_TAKEN);
+            throw new EntityAlreadyExistsException(
+                    String.format(ErrorMessages.EMAIL_IS_TAKEN, userDTO.getEmail())
+            );
         }
 
         userDTO.setRoleType(RoleType.USER);

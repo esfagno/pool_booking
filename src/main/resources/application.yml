@@ -38,3 +38,6 @@ logging:
 token:
   signing:
     key: "9vJsoj+ls24tEyJS0PV64P3pNuNJvsG5fxjKrfstPqU="
+jwt:
+  access-token-expiration-ms: 900000
+  refresh-token-expiration-ms: 604800000

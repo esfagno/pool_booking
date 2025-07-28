@@ -1,9 +1,8 @@
 package com.poolapp.pool.security;
 
 import com.poolapp.pool.model.User;
-import com.poolapp.pool.util.JwtConstants;
+import com.poolapp.pool.util.JwtProperties;
 import com.poolapp.pool.util.exception.ErrorMessages;
-import com.poolapp.pool.util.exception.ForbiddenOperationException;
 import com.poolapp.pool.util.exception.InvalidTokenException;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -29,6 +28,7 @@ import java.util.function.Function;
 public class JwtService {
 
     private final UserDetailsService userDetailsService;
+    private final JwtProperties jwtProperties;
     @Value("${token.signing.key}")
     private String jwtSigningKey;
     private Key signingKey;
@@ -40,11 +40,11 @@ public class JwtService {
     }
 
     public String generateAccessToken(UserDetails userDetails) {
-        return generateToken(userDetails, JwtConstants.ACCESS_TOKEN_EXPIRATION_MS);
+        return generateToken(userDetails, jwtProperties.getAccessTokenExpirationMs());
     }
 
     public String generateRefreshToken(UserDetails userDetails) {
-        return generateToken(userDetails, JwtConstants.REFRESH_TOKEN_EXPIRATION_MS);
+        return generateToken(userDetails, jwtProperties.getRefreshTokenExpirationMs());
     }
 
     private String generateToken(UserDetails userDetails, long expirationMs) {
@@ -69,14 +69,14 @@ public class JwtService {
             }
 
             String newAccessToken = generateAccessToken(userDetails);
-            long expiresAt = System.currentTimeMillis() + JwtConstants.ACCESS_TOKEN_EXPIRATION_MS;
+            long expiresAt = System.currentTimeMillis() + jwtProperties.getAccessTokenExpirationMs();
 
             return JwtAuthenticationResponse.builder()
                     .accessToken(newAccessToken)
                     .refreshToken(refreshToken)
                     .build();
         } catch (ExpiredJwtException e) {
-            throw new ForbiddenOperationException(ErrorMessages.REFRESH_TOKEN);
+            throw new InvalidTokenException(ErrorMessages.REFRESH_TOKEN);
         }
     }
 

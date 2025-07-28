@@ -1,8 +1,17 @@
 package com.poolapp.pool.util.exception;
 
+
 public class ForbiddenOperationException extends RuntimeException {
-    public ForbiddenOperationException(String message) {
-        super(message);
+
+    private final ForbiddenReason reason;
+
+    public ForbiddenOperationException(ForbiddenReason reason) {
+        super(reason.name());
+        this.reason = reason;
+    }
+
+    public ForbiddenReason getReason() {
+        return reason;
     }
 }
 
