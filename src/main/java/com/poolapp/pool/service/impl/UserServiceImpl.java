@@ -2,6 +2,7 @@ package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.UpdateUserDTO;
 import com.poolapp.pool.dto.UserDTO;
+import com.poolapp.pool.exception.ForbiddenOperationException;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.mapper.UserMapper;
 import com.poolapp.pool.model.Role;
@@ -13,7 +14,6 @@ import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.util.SecurityUtil;
 import com.poolapp.pool.util.exception.ApiErrorCode;
-import com.poolapp.pool.util.exception.ForbiddenOperationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,8 +23,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.Optional;
 
-import static com.poolapp.pool.util.exception.ForbiddenReason.MODIFY_OTHER_USER_NOT_ALLOWED;
-import static com.poolapp.pool.util.exception.ForbiddenReason.ROLE_CHANGE_NOT_ALLOWED;
 
 @Service
 @Slf4j
@@ -92,21 +90,26 @@ public class UserServiceImpl implements UserService {
     }
 
     private void checkRoleChangePermission(User requester, RoleType requestedRole) {
-        if (requestedRole != null && !securityUtil.isCurrentUserAdmin()) {
-            log.warn("User {} (email: {}) attempted to change role to {} without admin privileges",
-                    requester.getId(), requester.getEmail(), requestedRole);
-            throw new ForbiddenOperationException(ROLE_CHANGE_NOT_ALLOWED);
+        boolean isOwn = requester.getEmail().equalsIgnoreCase(securityUtil.getCurrentUser().getEmail());
+
+        if (requestedRole != null) {
+            if (!securityUtil.isCurrentUserAdmin()) {
+                throw new ForbiddenOperationException(ApiErrorCode.ROLE_CHANGE_NOT_ALLOWED);
+            }
+            if (isOwn) {
+                throw new ForbiddenOperationException(ApiErrorCode.ROLE_CHANGE_NOT_ALLOWED_OWN);
+            }
         }
     }
+
 
     private void checkModifyOtherUserPermission(User requester, User target) {
         boolean isOwn = requester.getEmail().equals(target.getEmail());
         boolean isAdmin = securityUtil.isCurrentUserAdmin();
-
         if (!isOwn && !isAdmin) {
             log.warn("User {} (email: {}) attempted to modify another user {} without admin privileges",
                     requester.getId(), requester.getEmail(), target.getId());
-            throw new ForbiddenOperationException(MODIFY_OTHER_USER_NOT_ALLOWED);
+            throw new ForbiddenOperationException(ApiErrorCode.MODIFY_OTHER_USER_NOT_ALLOWED);
         }
     }
 

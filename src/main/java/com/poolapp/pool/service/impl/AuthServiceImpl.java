@@ -1,6 +1,7 @@
 package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.UserDTO;
+import com.poolapp.pool.exception.EntityAlreadyExistsException;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.mapper.UserMapper;
 import com.poolapp.pool.model.User;
@@ -13,8 +14,6 @@ import com.poolapp.pool.security.UserLoginRequest;
 import com.poolapp.pool.service.AuthService;
 import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.util.exception.ApiErrorCode;
-import com.poolapp.pool.util.exception.EntityAlreadyExistsException;
-import com.poolapp.pool.util.exception.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -34,7 +33,9 @@ public class AuthServiceImpl implements AuthService {
     public JwtAuthenticationResponse register(UserDTO userDTO) {
         if (userRepository.findByEmail(userDTO.getEmail()).isPresent()) {
             throw new EntityAlreadyExistsException(
-                    String.format(ErrorMessages.EMAIL_IS_TAKEN, userDTO.getEmail())
+                    ApiErrorCode.EMAIL_TAKEN,
+                    "User",
+                    userDTO.getEmail()
             );
         }
 
