@@ -6,10 +6,7 @@ import java.util.stream.Stream;
 
 public final class ApiErrorMessages {
     private static final Map<String, String> messages = Stream.of(new String[][]{
-            {"ROLE_CHANGE_NOT_ALLOWED", "You are not allowed to change roles."},
-            {"ROLE_CHANGE_NOT_ALLOWED_OWN", "You are not allowed to change your own role."},
-            {"MODIFY_OTHER_USER_NOT_ALLOWED", "You cannot modify other users."},
-            {"FORBIDDEN_OPERATION", "Forbidden operation: %s"},
+            {"ACCESS DENIED", "ACCESS DENIED"},
             {"EMAIL_IS_TAKEN", "Email '%s' is already registered"},
             {"INVALID_CREDENTIALS", "Invalid email or password"},
             {"POOL_NOT_FOUND", "Pool with ID %s not found"},

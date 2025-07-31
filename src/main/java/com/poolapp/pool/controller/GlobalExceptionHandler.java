@@ -1,7 +1,6 @@
 package com.poolapp.pool.controller;
 
 import com.poolapp.pool.exception.EntityAlreadyExistsException;
-import com.poolapp.pool.exception.ForbiddenOperationException;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.util.exception.ApiErrorCode;
 import com.poolapp.pool.util.exception.ApiErrorMessages;
@@ -11,6 +10,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -31,16 +31,18 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return ResponseEntity.status(status).body(new ApiErrorResponse(status, errorCode, path, details));
     }
 
-    @ExceptionHandler(ForbiddenOperationException.class)
-    protected ResponseEntity<Object> handleForbidden(ForbiddenOperationException ex, WebRequest request) {
+    @ExceptionHandler(AccessDeniedException.class)
+    protected ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
         String errorId = UUID.randomUUID().toString();
         String path = extractPath(request);
-        String message = ApiErrorMessages.getMessage(ex.getErrorCode().getCode());
+        ApiErrorCode errorCode = ApiErrorCode.ACCESS_DENIED;
+        String message = ApiErrorMessages.getMessage(errorCode.getCode());
 
-        log.warn("FORBIDDEN[{}]: {} - {}", errorId, ex.getErrorCode().getCode(), path);
+        log.warn("ACCESS_DENIED[{}]: {} - {}", errorId, path, ex.getMessage());
 
-        return createResponse(ex.getErrorCode().getHttpStatus(), ex.getErrorCode().getCode(), path, Map.of("reason", ex.getErrorCode().getCode(), "message", message));
+        return createResponse(HttpStatus.FORBIDDEN, errorCode.getCode(), path, Map.of("errorId", errorId, "message", message));
     }
+
 
     @ExceptionHandler(ModelNotFoundException.class)
     protected ResponseEntity<Object> handleNotFound(ModelNotFoundException ex, WebRequest request) {

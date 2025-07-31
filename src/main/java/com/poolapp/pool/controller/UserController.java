@@ -6,6 +6,7 @@ import com.poolapp.pool.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -20,6 +21,14 @@ public class UserController {
     private final UserService userService;
 
     @PatchMapping("/modify")
+    @PreAuthorize(
+            "(#dto.roleType == null && " +
+                    "(hasRole('ADMIN') || #dto.email == authentication.name)" +
+                    ") || (" +
+                    "hasRole('ADMIN') && " +
+                    "#dto.roleType != null && " +
+                    "#dto.email != authentication.name" +
+                    ")")
     public ResponseEntity<UserDTO> modifyUser(@Valid @RequestBody UpdateUserDTO dto) {
         UserDTO updatedUser = userService.modifyUser(dto);
         return ResponseEntity.ok(updatedUser);

@@ -2,7 +2,6 @@ package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.UpdateUserDTO;
 import com.poolapp.pool.dto.UserDTO;
-import com.poolapp.pool.exception.ForbiddenOperationException;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.mapper.UserMapper;
 import com.poolapp.pool.model.Role;
@@ -16,6 +15,7 @@ import com.poolapp.pool.util.SecurityUtil;
 import com.poolapp.pool.util.exception.ApiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,11 +49,9 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserDTO modifyUser(UpdateUserDTO dto) {
-        User requester = securityUtil.getCurrentUser();
+
         User target = userRepository.findByEmail(dto.getEmail())
                 .orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, dto.getEmail()));
-
-        validatePermissions(requester, target, dto.getRoleType());
 
         if (dto.getRoleType() != null) {
             Role newRole = getRoleByType(dto.getRoleType());
@@ -82,35 +80,6 @@ public class UserServiceImpl implements UserService {
     private Role getRoleByType(RoleType roleType) {
         return roleRepository.findByName(roleType)
                 .orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, roleType.name()));
-    }
-
-    private void validatePermissions(User requester, User target, RoleType requestedRole) {
-        checkRoleChangePermission(requester, requestedRole);
-        checkModifyOtherUserPermission(requester, target);
-    }
-
-    private void checkRoleChangePermission(User requester, RoleType requestedRole) {
-        boolean isOwn = requester.getEmail().equalsIgnoreCase(securityUtil.getCurrentUser().getEmail());
-
-        if (requestedRole != null) {
-            if (!securityUtil.isCurrentUserAdmin()) {
-                throw new ForbiddenOperationException(ApiErrorCode.ROLE_CHANGE_NOT_ALLOWED);
-            }
-            if (isOwn) {
-                throw new ForbiddenOperationException(ApiErrorCode.ROLE_CHANGE_NOT_ALLOWED_OWN);
-            }
-        }
-    }
-
-
-    private void checkModifyOtherUserPermission(User requester, User target) {
-        boolean isOwn = requester.getEmail().equals(target.getEmail());
-        boolean isAdmin = securityUtil.isCurrentUserAdmin();
-        if (!isOwn && !isAdmin) {
-            log.warn("User {} (email: {}) attempted to modify another user {} without admin privileges",
-                    requester.getId(), requester.getEmail(), target.getId());
-            throw new ForbiddenOperationException(ApiErrorCode.MODIFY_OTHER_USER_NOT_ALLOWED);
-        }
     }
 
 }

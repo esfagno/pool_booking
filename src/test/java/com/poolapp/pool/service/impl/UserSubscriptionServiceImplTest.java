@@ -18,6 +18,7 @@ import com.poolapp.pool.repository.UserSubscriptionRepository;
 import com.poolapp.pool.repository.specification.builder.SubscriptionSpecificationBuilder;
 import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecificationBuilder;
 import com.poolapp.pool.service.UserService;
+import com.poolapp.pool.util.exception.ApiErrorCode;
 import com.poolapp.pool.util.exception.ErrorMessages;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -147,7 +148,7 @@ class UserSubscriptionServiceImplTest {
         when(userRepository.findByEmail(userSubscriptionDTO.getUserEmail())).thenReturn(Optional.empty());
 
         ModelNotFoundException ex = assertThrows(ModelNotFoundException.class, () -> service.createUserSubscription(userSubscriptionDTO));
-        assertEquals(ErrorMessages.USER_NOT_FOUND, ex.getMessage());
+        assertEquals(ApiErrorCode.NOT_FOUND, ex.getErrorCode());
     }
 
     @Test
@@ -159,7 +160,7 @@ class UserSubscriptionServiceImplTest {
         when(subscriptionRepository.findOne(spec)).thenReturn(Optional.empty());
 
         ModelNotFoundException ex = assertThrows(ModelNotFoundException.class, () -> service.createUserSubscription(userSubscriptionDTO));
-        assertEquals(ErrorMessages.SUBSCRIPTION_NOT_FOUND, ex.getMessage());
+        assertEquals(ApiErrorCode.NOT_FOUND, ex.getErrorCode());
     }
 
 
@@ -197,8 +198,8 @@ class UserSubscriptionServiceImplTest {
         when(userSubscriptionRepository.findOne(spec)).thenReturn(Optional.empty());
 
         ModelNotFoundException ex = assertThrows(ModelNotFoundException.class, () -> service.updateUserSubscription(userSubscriptionDTO));
+        assertEquals(ApiErrorCode.NOT_FOUND, ex.getErrorCode());
 
-        assertEquals(ErrorMessages.USER_SUBSCRIPTION_NOT_FOUND, ex.getMessage());
     }
 
     @Test
@@ -225,7 +226,8 @@ class UserSubscriptionServiceImplTest {
 
         ModelNotFoundException ex = assertThrows(ModelNotFoundException.class, () -> service.deleteUserSubscription(userSubscriptionDTO));
 
-        assertEquals(ErrorMessages.USER_SUBSCRIPTION_NOT_FOUND, ex.getMessage());
+
+        assertEquals(ApiErrorCode.NOT_FOUND, ex.getErrorCode());
 
         verify(userSubscriptionMapper).toEntity(userSubscriptionDTO);
         verify(userSubscriptionSpecificationBuilder).buildSpecification(userSubscriptionEntity);
