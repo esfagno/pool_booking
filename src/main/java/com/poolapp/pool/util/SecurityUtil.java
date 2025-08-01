@@ -4,11 +4,11 @@ import com.poolapp.pool.model.User;
 import com.poolapp.pool.model.enums.RoleType;
 import com.poolapp.pool.security.UserDetailsImpl;
 import com.poolapp.pool.util.exception.ErrorMessages;
+import lombok.experimental.UtilityClass;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 
-@Component
+@UtilityClass
 public class SecurityUtil {
 
     public User getCurrentUser() {
@@ -19,7 +19,7 @@ public class SecurityUtil {
         throw new IllegalStateException(ErrorMessages.USER_NOT_FOUND);
     }
 
-    public boolean isCurrentUserAdmin() {
+    public static boolean isCurrentUserAdmin() {
         return getCurrentUser().getRole().getName() == RoleType.ADMIN;
     }
 }

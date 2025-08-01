@@ -10,7 +10,7 @@ import java.util.UUID;
 public class ApiErrorResponse {
     private final String errorId = UUID.randomUUID().toString();
     private final LocalDateTime timestamp = LocalDateTime.now();
-    private final int status;
+    private final Integer status;
     private final String errorCode;
     private final String path;
     private final Object details;

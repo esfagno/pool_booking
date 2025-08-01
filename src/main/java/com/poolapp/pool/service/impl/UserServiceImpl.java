@@ -11,11 +11,9 @@ import com.poolapp.pool.repository.BookingRepository;
 import com.poolapp.pool.repository.RoleRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.service.UserService;
-import com.poolapp.pool.util.SecurityUtil;
 import com.poolapp.pool.util.exception.ApiErrorCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,7 +31,6 @@ public class UserServiceImpl implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
-    private final SecurityUtil securityUtil;
 
     @Override
     public UserDTO createUser(UserDTO dto) {

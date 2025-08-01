@@ -12,7 +12,6 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.stereotype.Service;
@@ -29,13 +28,12 @@ public class JwtService {
 
     private final UserDetailsService userDetailsService;
     private final JwtProperties jwtProperties;
-    @Value("${token.signing.key}")
-    private String jwtSigningKey;
     private Key signingKey;
 
     @PostConstruct
     public void init() {
-        byte[] keyBytes = Decoders.BASE64.decode(jwtSigningKey);
+        String key = jwtProperties.getSigningKey();
+        byte[] keyBytes = Decoders.BASE64.decode(key);
         this.signingKey = Keys.hmacShaKeyFor(keyBytes);
     }
 
