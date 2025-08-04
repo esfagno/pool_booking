@@ -20,111 +20,64 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 
 
 @Slf4j
 @ControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
-    private ResponseEntity<Object> createResponse(HttpStatus status, String errorCode, String path, Map<String, Object> details) {
-        return ResponseEntity.status(status).body(new ApiErrorResponse(status, errorCode, path, details));
-    }
-
     @ExceptionHandler(AccessDeniedException.class)
     protected ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
-        String errorId = UUID.randomUUID().toString();
-        String path = extractPath(request);
-        ApiErrorCode errorCode = ApiErrorCode.FORBIDDEN;
-        String message = ApiErrorMessages.getMessage(errorCode.getCode());
-
-        log.warn("ACCESS_DENIED[{}]: {} - {}", errorId, path, ex.getMessage());
-
-        return createResponse(HttpStatus.FORBIDDEN, errorCode.getCode(), path, Map.of("errorId", errorId, "message", message));
+        return buildAndLogError(request, HttpStatus.FORBIDDEN, ApiErrorCode.FORBIDDEN, "ACCESS_DENIED", ex, Map.of());
     }
-
 
     @ExceptionHandler(ModelNotFoundException.class)
     protected ResponseEntity<Object> handleNotFound(ModelNotFoundException ex, WebRequest request) {
-        String errorId = UUID.randomUUID().toString();
-        String path = extractPath(request);
-        String message = ApiErrorMessages.format(ex.getErrorCode().getCode(), ex.getDetail());
-
-        log.warn("NOT_FOUND[{}]: {} - {}", errorId, ex.getErrorCode().getCode(), path);
-
-        return createResponse(HttpStatus.NOT_FOUND, ex.getErrorCode().getCode(), path, Map.of("details", ex.getDetail(), "message", message));
-    }
-
-    @ExceptionHandler(EntityAlreadyExistsException.class)
-    protected ResponseEntity<Object> handleConflict(EntityAlreadyExistsException ex, WebRequest request) {
-        String errorId = UUID.randomUUID().toString();
-        String path = extractPath(request);
-        ApiErrorCode errorCode = ApiErrorCode.ALREADY_EXISTS;
-        String details = ex.getMessage();
-
-        if (ex.getMessage() != null && ex.getMessage().contains("email")) {
-            errorCode = ApiErrorCode.EMAIL_TAKEN;
-            details = extractEmailFromMessage(ex.getMessage());
-        }
-
-        String message = ApiErrorMessages.format(errorCode.getCode(), details);
-        log.warn("ALREADY_EXISTS[{}]: {} - {}", errorId, errorCode.getCode(), ex.getMessage());
-
-        return createResponse(HttpStatus.CONFLICT, errorCode.getCode(), path, Map.of("details", details, "message", message));
+        String details = ex.getDetail();
+        return buildAndLogError(request, HttpStatus.NOT_FOUND, ex.getErrorCode(), "NOT_FOUND", ex, Map.of("details", details));
     }
 
     @ExceptionHandler(BadCredentialsException.class)
     protected ResponseEntity<Object> handleUnauthorized(BadCredentialsException ex, WebRequest request) {
-        String errorId = UUID.randomUUID().toString();
-        String path = extractPath(request);
-        String message = ApiErrorMessages.getMessage(ApiErrorCode.INVALID_CREDENTIALS.getCode());
+        return buildAndLogError(request, HttpStatus.UNAUTHORIZED, ApiErrorCode.INVALID_CREDENTIALS, "INVALID_CREDENTIALS", ex, Map.of());
+    }
 
-        log.warn("INVALID_CREDENTIALS[{}]: {}", errorId, path);
+    @ExceptionHandler(EntityAlreadyExistsException.class)
+    protected ResponseEntity<Object> handleConflict(EntityAlreadyExistsException ex, WebRequest request) {
+        ApiErrorCode errorCode = ex.getErrorCode();
+        Map<String, Object> details = Map.of("message", "Email is already taken", "reason", ex.getMessage());
 
-        return createResponse(HttpStatus.UNAUTHORIZED, ApiErrorCode.INVALID_CREDENTIALS.getCode(), path, Map.of("message", message));
+        return buildAndLogError(request, errorCode.getHttpStatus(), errorCode, "ALREADY_EXISTS", ex, details);
     }
 
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
 
-        String errorId = UUID.randomUUID().toString();
-        String path = extractPath(request);
-        Map<String, String> errors = ex.getBindingResult().getFieldErrors().stream().collect(HashMap::new, (map, error) -> map.put(error.getField(), error.getDefaultMessage()), HashMap::putAll);
+        Map<String, String> fieldErrors = ex.getBindingResult().getFieldErrors().stream().collect(HashMap::new, (map, error) -> map.put(error.getField(), error.getDefaultMessage()), HashMap::putAll);
 
-        String message = ApiErrorMessages.getMessage(ApiErrorCode.VALIDATION_ERROR.getCode());
-        log.warn("VALIDATION[{}]: {} - {}", errorId, path, errors);
-
-        return createResponse(HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR.getCode(), path, Map.of("message", message, "errors", errors));
+        Map<String, Object> extraDetails = Map.of("errors", fieldErrors);
+        return buildAndLogError(request, HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, "VALIDATION", ex, extraDetails);
     }
 
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<Object> handleGlobal(Exception ex, WebRequest request) {
-        String errorId = UUID.randomUUID().toString();
-        String path = extractPath(request);
-        String message = ApiErrorMessages.getMessage(ApiErrorCode.INTERNAL_ERROR.getCode());
-
-        log.error("INTERNAL_ERROR[{}]: {} - {}", errorId, path, ex.getMessage(), ex);
-
-        return createResponse(HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.INTERNAL_ERROR.getCode(), path, Map.of("errorId", errorId, "message", message));
+        return buildAndLogError(request, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.INTERNAL_ERROR, "INTERNAL_ERROR", ex, Map.of());
     }
 
     private String extractPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");
     }
 
-    private String extractEmailFromMessage(String message) {
-        if (message == null) return null;
-        int start = message.indexOf('\'');
-        int end = message.lastIndexOf('\'');
-        if (start >= 0 && end > start) {
-            String email = message.substring(start + 1, end);
-            if (email.contains("@")) return email;
-        }
-        int colonIndex = message.indexOf(':');
-        if (colonIndex > 0) {
-            String email = message.substring(colonIndex + 1).trim();
-            if (email.contains("@")) return email;
-        }
-        return null;
+    private ResponseEntity<Object> buildAndLogError(WebRequest request, HttpStatus status, ApiErrorCode errorCode, String logPrefix, Throwable cause, Map<String, Object> extraDetails) {
+        String path = extractPath(request);
+        String message = ApiErrorMessages.getMessage(errorCode.getCode());
+        Map<String, Object> details = new HashMap<>(extraDetails);
+        details.put("message", message);
+
+        ApiErrorResponse response = new ApiErrorResponse(status, errorCode.getCode(), path, details);
+
+        log.error("{}[{}]: {} - Cause: {}", logPrefix, response.getErrorId(), path, cause.getMessage());
+
+        return ResponseEntity.status(status).body(response);
     }
 }

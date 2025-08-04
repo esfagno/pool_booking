@@ -21,14 +21,7 @@ public class UserController {
     private final UserService userService;
 
     @PatchMapping("/modify")
-    @PreAuthorize(
-            "(#dto.roleType == null && " +
-                    "(hasRole('ADMIN') || #dto.email == authentication.name)" +
-                    ") || (" +
-                    "hasRole('ADMIN') && " +
-                    "#dto.roleType != null && " +
-                    "#dto.email != authentication.name" +
-                    ")")
+    @PreAuthorize("@userModificationChecker.canModify(#dto)")
     public ResponseEntity<UserDTO> modifyUser(@Valid @RequestBody UpdateUserDTO dto) {
         UserDTO updatedUser = userService.modifyUser(dto);
         return ResponseEntity.ok(updatedUser);
