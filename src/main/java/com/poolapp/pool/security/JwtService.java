@@ -49,7 +49,6 @@ public class JwtService {
         Map<String, Object> claims = new HashMap<>();
         if (userDetails instanceof User user) {
             claims.put("id", user.getId());
-            claims.put("email", user.getEmail());
             claims.put("role", user.getRole().getName().name());
         }
         return Jwts.builder().setClaims(claims).setSubject(userDetails.getUsername()).setIssuedAt(new Date()).setExpiration(new Date(System.currentTimeMillis() + expirationMs)).signWith(signingKey, SignatureAlgorithm.HS256).compact();

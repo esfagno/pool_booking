@@ -35,7 +35,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     protected ResponseEntity<Object> handleAccessDenied(AccessDeniedException ex, WebRequest request) {
         String errorId = UUID.randomUUID().toString();
         String path = extractPath(request);
-        ApiErrorCode errorCode = ApiErrorCode.ACCESS_DENIED;
+        ApiErrorCode errorCode = ApiErrorCode.FORBIDDEN;
         String message = ApiErrorMessages.getMessage(errorCode.getCode());
 
         log.warn("ACCESS_DENIED[{}]: {} - {}", errorId, path, ex.getMessage());

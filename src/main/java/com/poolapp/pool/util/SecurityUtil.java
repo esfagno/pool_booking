@@ -19,7 +19,7 @@ public class SecurityUtil {
         throw new IllegalStateException(ErrorMessages.USER_NOT_FOUND);
     }
 
-    public static boolean isCurrentUserAdmin() {
+    public boolean isCurrentUserAdmin() {
         return getCurrentUser().getRole().getName() == RoleType.ADMIN;
     }
 }

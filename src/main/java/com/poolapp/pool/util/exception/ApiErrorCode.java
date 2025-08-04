@@ -17,9 +17,7 @@ public enum ApiErrorCode {
     VALIDATION_ERROR("VALIDATION_ERROR"),
 
     INTERNAL_ERROR("INTERNAL_ERROR"),
-    SERVICE_UNAVAILABLE("SERVICE_UNAVAILABLE"),
-
-    ACCESS_DENIED("ACCESS_DENIED");
+    SERVICE_UNAVAILABLE("SERVICE_UNAVAILABLE");
 
     private final String code;
     private final HttpStatus httpStatus;

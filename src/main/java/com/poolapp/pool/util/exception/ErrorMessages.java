@@ -1,5 +1,8 @@
 package com.poolapp.pool.util.exception;
 
+import lombok.experimental.UtilityClass;
+
+@UtilityClass
 public final class ErrorMessages {
     public static final String POOL_NOT_FOUND = "Pool with ID %s not found";
     public static final String SCHEDULE_NOT_FOUND = "Schedule with ID %s not found";
@@ -17,6 +20,4 @@ public final class ErrorMessages {
     public static final String ROLE_NOT_FOUND = "Role '%s' not found";
     public static final String REFRESH_TOKEN = "Refresh token is invalid or expired";
 
-    private ErrorMessages() {
-    }
 }

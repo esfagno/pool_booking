@@ -1,9 +1,12 @@
 package com.poolapp.pool.util.exception;
 
+import lombok.experimental.UtilityClass;
+
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@UtilityClass
 public final class ApiErrorMessages {
     private static final Map<String, String> messages = Stream.of(new String[][]{
             {"ACCESS DENIED", "ACCESS DENIED"},
@@ -19,10 +22,6 @@ public final class ApiErrorMessages {
             {"INTERNAL_ERROR", "An unexpected error occurred. Please try again later."},
             {"SERVICE_UNAVAILABLE", "The service is temporarily unavailable. Please try again later."}
     }).collect(Collectors.toMap(data -> data[0], data -> data[1]));
-
-    private ApiErrorMessages() {
-        throw new UnsupportedOperationException("Utility class");
-    }
 
     public static String getMessage(String code) {
         return messages.getOrDefault(code, "Unexpected error occurred.");
