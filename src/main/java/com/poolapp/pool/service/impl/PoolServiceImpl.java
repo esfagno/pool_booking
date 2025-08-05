@@ -11,7 +11,7 @@ import com.poolapp.pool.repository.PoolRepository;
 import com.poolapp.pool.repository.PoolScheduleRepository;
 import com.poolapp.pool.repository.specification.builder.PoolSpecificationBuilder;
 import com.poolapp.pool.service.PoolService;
-import com.poolapp.pool.util.ErrorMessages;
+import com.poolapp.pool.util.exception.ApiErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
@@ -32,7 +32,7 @@ public class PoolServiceImpl implements PoolService {
     @Override
     public Pool getPoolByName(String name) {
         return poolRepository.findByName(name)
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.POOL_NOT_FOUND + name));
+                .orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, name));
     }
 
     @Override
@@ -42,7 +42,6 @@ public class PoolServiceImpl implements PoolService {
         return poolMapper.toDto(saved);
 
     }
-
 
     @Override
     public List<PoolDTO> searchPools(PoolDTO filterDto) {
@@ -91,7 +90,7 @@ public class PoolServiceImpl implements PoolService {
     @Override
     public PoolScheduleDTO updateSchedule(PoolScheduleDTO dto) {
         PoolSchedule existing = scheduleRepository.findByPoolNameAndDayOfWeek(dto.getPoolName(), dto.getDayOfWeek())
-                .orElseThrow(() -> new ModelNotFoundException(ErrorMessages.SCHEDULE_NOT_FOUND + dto.getPoolName()));
+                .orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, dto.getPoolName()));
 
         PoolSchedule incoming = poolScheduleMapper.toEntity(dto, existing.getPool());
         poolScheduleMapper.updateScheduleWith(existing, incoming);
@@ -104,8 +103,7 @@ public class PoolServiceImpl implements PoolService {
     public void deleteScheduleByDay(PoolDTO poolDTO, Short dayOfWeek) {
         Pool pool = getPoolByName(poolDTO.getName());
         if (!scheduleRepository.existsByPoolIdAndDayOfWeek(pool.getId(), dayOfWeek)) {
-            throw new ModelNotFoundException(
-                    String.format("%s for poolId=%d and dayOfWeek=%d", ErrorMessages.SCHEDULE_NOT_FOUND, pool.getId(), dayOfWeek));
+            throw new ModelNotFoundException(ApiErrorCode.NOT_FOUND, poolDTO.getName());
         }
         scheduleRepository.deleteByPoolIdAndDayOfWeek(pool.getId(), dayOfWeek);
     }

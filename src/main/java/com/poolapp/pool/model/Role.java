@@ -12,6 +12,8 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 
 import java.io.Serializable;
 
@@ -28,7 +30,8 @@ public class Role implements Serializable {
     private Integer id;
 
     @Enumerated(EnumType.STRING)
-    @Column(unique = true, nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
+    @Column(unique = true, name = "name", columnDefinition = "role_type", nullable = false)
     private RoleType name;
 
     @Column(nullable = true, columnDefinition = "TEXT")

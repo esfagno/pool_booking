@@ -28,7 +28,6 @@ public class Booking {
     @EmbeddedId
     private BookingId id;
 
-    //rep doesnt work without it
     @ManyToOne
     @MapsId("userId")
     @JoinColumn(name = "user_id")

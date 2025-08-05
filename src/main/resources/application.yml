@@ -34,3 +34,8 @@ logging:
   level:
     root: WARN
     com.poolapp.pool.service.impl: DEBUG
+
+jwt:
+  signing-key: "9vJsoj+ls24tEyJS0PV64P3pNuNJvsG5fxjKrfstPqU="
+  access-token-expiration-ms: 900000
+  refresh-token-expiration-ms: 604800000
