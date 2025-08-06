@@ -53,31 +53,16 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public BookingDTO createBooking(BookingDTO bookingDTO) {
         log.debug("Creating booking for user: {}, session: {}", bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
-        BookingId bookingId = buildBookingId(bookingDTO);
 
-        Optional<UserSubscription> maybeSubscription = userSubscriptionService.validateUserSubscription(bookingDTO.getUserEmail());
-
+        UserSubscription subscription = validateUserSubscription(bookingDTO);
         sessionService.validateSessionHasAvailableSpots(bookingDTO.getSessionDTO());
+        Booking savedBooking = createAndSaveBooking(bookingDTO);
+        updateSubscriptionOnBooking(subscription);
+        updateSessionCapacity(bookingDTO, CapacityOperation.DECREASE);
+        sendBookingConfirmation(bookingDTO);
 
-        Booking booking = bookingMapper.toEntity(bookingDTO);
-        booking.setId(bookingId);
-        Booking saved = bookingRepository.save(booking);
-
-        maybeSubscription.ifPresent(subscription -> {
-            subscription.setRemainingBookings(subscription.getRemainingBookings() - 1);
-            userSubscriptionRepository.save(subscription);
-            log.debug("Decreased remaining bookings for subscription id={}", subscription.getId());
-        });
-
-        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
-        request.setSessionDTO(bookingDTO.getSessionDTO());
-        request.setOperation(CapacityOperation.DECREASE);
-        sessionService.changeSessionCapacity(request);
-
-        mailService.sendBookingConfirmationEmail(bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
         log.info("Booking created successfully for user: {}, session: {}", bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
-
-        return bookingMapper.toDto(saved);
+        return bookingMapper.toDto(savedBooking);
     }
 
     @Transactional
@@ -182,9 +167,9 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public void deleteBookingsBySession(SessionDTO sessionDTO) {
         log.debug("Deleting bookings by session: {}", sessionDTO);
-        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime()).orElseThrow(() -> {
-            log.warn("Session not found for deleting bookings: pool={}, startTime={}", sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
-            String details = String.format("pool=%s, startTime=%s", sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
+        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime()).orElseThrow(() -> {
+            log.warn("Session not found for deleting bookings: pool={}, startTime={}", sessionDTO.getPoolName(), sessionDTO.getStartTime());
+            String details = String.format("pool=%s, startTime=%s", sessionDTO.getPoolName(), sessionDTO.getStartTime());
 
             return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, details);
         });
@@ -195,9 +180,9 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Long countBookingsBySession(SessionDTO sessionDTO) {
         log.debug("Counting bookings by session: {}", sessionDTO);
-        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime()).orElseThrow(() -> {
-            log.warn("Session not found for counting bookings: pool={}, startTime={}", sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
-            String details = String.format("pool=%s, startTime=%s", sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
+        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime()).orElseThrow(() -> {
+            log.warn("Session not found for counting bookings: pool={}, startTime={}", sessionDTO.getPoolName(), sessionDTO.getStartTime());
+            String details = String.format("pool=%s, startTime=%s", sessionDTO.getPoolName(), sessionDTO.getStartTime());
 
             return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, details);
         });
@@ -224,12 +209,42 @@ public class BookingServiceImpl implements BookingService {
             return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, details);
         });
 
-        Session session = sessionService.getSessionByPoolNameAndStartTime(bookingDTO.getSessionDTO().getPoolDTO().getName(), bookingDTO.getSessionDTO().getStartTime()).orElseThrow(() -> {
-            log.warn("Session not found while building BookingId: pool={}, startTime={}", bookingDTO.getSessionDTO().getPoolDTO().getName(), bookingDTO.getSessionDTO().getStartTime());
-            String details = String.format("pool=%s, startTime=%s", bookingDTO.getSessionDTO().getPoolDTO().getName(), bookingDTO.getSessionDTO().getStartTime());
+        Session session = sessionService.getSessionByPoolNameAndStartTime(bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime()).orElseThrow(() -> {
+            log.warn("Session not found while building BookingId: pool={}, startTime={}", bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime());
+            String details = String.format("pool=%s, startTime=%s", bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime());
 
             return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, details);
         });
         return new BookingId(user.getId(), session.getId());
+    }
+
+    private UserSubscription validateUserSubscription(BookingDTO bookingDTO) {
+        Optional<UserSubscription> maybeSubscription = userSubscriptionService.validateUserSubscription(bookingDTO.getUserEmail());
+        return maybeSubscription.orElse(null);
+    }
+
+    private Booking createAndSaveBooking(BookingDTO bookingDTO) {
+        Booking booking = bookingMapper.toEntity(bookingDTO);
+        booking.setId(buildBookingId(bookingDTO));
+        return bookingRepository.save(booking);
+    }
+
+    private void updateSubscriptionOnBooking(UserSubscription subscription) {
+        if (subscription != null) {
+            subscription.setRemainingBookings(subscription.getRemainingBookings() - 1);
+            userSubscriptionRepository.save(subscription);
+            log.debug("Decreased remaining bookings for subscription id={}", subscription.getId());
+        }
+    }
+
+    private void updateSessionCapacity(BookingDTO bookingDTO, CapacityOperation operation) {
+        ChangeSessionCapacityRequest request = new ChangeSessionCapacityRequest();
+        request.setSessionDTO(bookingDTO.getSessionDTO());
+        request.setOperation(operation);
+        sessionService.changeSessionCapacity(request);
+    }
+
+    private void sendBookingConfirmation(BookingDTO bookingDTO) {
+        mailService.sendBookingConfirmationEmail(bookingDTO.getUserEmail(), bookingDTO.getSessionDTO());
     }
 }

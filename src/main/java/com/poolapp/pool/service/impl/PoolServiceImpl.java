@@ -2,6 +2,8 @@ package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.PoolDTO;
 import com.poolapp.pool.dto.PoolScheduleDTO;
+import com.poolapp.pool.dto.RequestPoolDTO;
+import com.poolapp.pool.dto.requestDTO.RequestPoolScheduleDTO;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.mapper.PoolMapper;
 import com.poolapp.pool.mapper.PoolScheduleMapper;
@@ -15,6 +17,7 @@ import com.poolapp.pool.util.exception.ApiErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -44,7 +47,7 @@ public class PoolServiceImpl implements PoolService {
     }
 
     @Override
-    public List<PoolDTO> searchPools(PoolDTO filterDto) {
+    public List<PoolDTO> searchPools(RequestPoolDTO filterDto) {
         Pool filter = poolMapper.toEntity(filterDto);
         Specification<Pool> spec = poolSpecificationBuilder.buildSpecification(filter);
         List<Pool> pools = poolRepository.findAll(spec);
@@ -52,21 +55,22 @@ public class PoolServiceImpl implements PoolService {
     }
 
     @Override
-    public PoolDTO updatePool(String oldName, PoolDTO updatedPool) {
-        Pool pool = getPoolByName(oldName);
-        poolMapper.updatePoolFromDto(pool, updatedPool);
+    public PoolDTO updatePool(RequestPoolDTO updatePool) {
+        Pool pool = getPoolByName(updatePool.getName());
+        poolMapper.updatePoolFromRequestDto(pool, updatePool);
         Pool saved = poolRepository.save(pool);
         return poolMapper.toDto(saved);
     }
 
+    @Transactional
     @Override
-    public void deletePool(PoolDTO dto) {
+    public void deletePool(RequestPoolDTO dto) {
         Pool pool = getPoolByName(dto.getName());
         poolRepository.deleteByName(dto.getName());
     }
 
     @Override
-    public PoolDTO updateCapacity(PoolDTO dto) {
+    public PoolDTO updateCapacity(RequestPoolDTO dto) {
         Pool pool = getPoolByName(dto.getName());
         pool.setMaxCapacity(dto.getMaxCapacity());
         Pool saved = poolRepository.save(pool);
@@ -77,6 +81,7 @@ public class PoolServiceImpl implements PoolService {
     public PoolScheduleDTO createOrUpdateSchedule(PoolScheduleDTO dto) {
         Pool pool = getPoolByName(dto.getPoolName());
         PoolSchedule schedule = poolScheduleMapper.toEntity(dto, pool);
+        schedule.setPool(pool);
 
         PoolSchedule saved = scheduleRepository.findByPoolNameAndDayOfWeek(pool.getName(), dto.getDayOfWeek())
                 .map(existing -> {
@@ -88,24 +93,29 @@ public class PoolServiceImpl implements PoolService {
     }
 
     @Override
-    public PoolScheduleDTO updateSchedule(PoolScheduleDTO dto) {
+    public PoolScheduleDTO updateSchedule(RequestPoolScheduleDTO dto) {
         PoolSchedule existing = scheduleRepository.findByPoolNameAndDayOfWeek(dto.getPoolName(), dto.getDayOfWeek())
+                .orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, dto.getPoolName()));
+
+        Pool pool = poolRepository.findByName(dto.getPoolName())
                 .orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, dto.getPoolName()));
 
         PoolSchedule incoming = poolScheduleMapper.toEntity(dto, existing.getPool());
         poolScheduleMapper.updateScheduleWith(existing, incoming);
+        existing.setPool(pool);
 
         PoolSchedule saved = scheduleRepository.save(existing);
         return poolScheduleMapper.toDto(saved);
     }
 
+    @Transactional
     @Override
-    public void deleteScheduleByDay(PoolDTO poolDTO, Short dayOfWeek) {
-        Pool pool = getPoolByName(poolDTO.getName());
-        if (!scheduleRepository.existsByPoolIdAndDayOfWeek(pool.getId(), dayOfWeek)) {
-            throw new ModelNotFoundException(ApiErrorCode.NOT_FOUND, poolDTO.getName());
+    public void deleteScheduleByDay(RequestPoolScheduleDTO dto) {
+        Pool pool = getPoolByName(dto.getPoolName());
+        if (!scheduleRepository.existsByPoolIdAndDayOfWeek(pool.getId(), dto.getDayOfWeek())) {
+            throw new ModelNotFoundException(ApiErrorCode.NOT_FOUND, dto.getPoolName());
         }
-        scheduleRepository.deleteByPoolIdAndDayOfWeek(pool.getId(), dayOfWeek);
+        scheduleRepository.deleteByPoolIdAndDayOfWeek(pool.getId(), dto.getDayOfWeek());
     }
 
     @Override
