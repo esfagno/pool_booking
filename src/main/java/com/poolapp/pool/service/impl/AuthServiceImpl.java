@@ -10,7 +10,7 @@ import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.security.JwtAuthenticationResponse;
 import com.poolapp.pool.security.JwtService;
 import com.poolapp.pool.security.UserDetailsImpl;
-import com.poolapp.pool.security.UserLoginRequest;
+import com.poolapp.pool.security.request.UserLoginRequest;
 import com.poolapp.pool.service.AuthService;
 import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.util.exception.ApiErrorCode;

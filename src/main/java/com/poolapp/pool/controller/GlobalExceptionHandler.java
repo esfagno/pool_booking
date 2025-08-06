@@ -2,6 +2,7 @@ package com.poolapp.pool.controller;
 
 import com.poolapp.pool.exception.EntityAlreadyExistsException;
 import com.poolapp.pool.exception.ModelNotFoundException;
+import com.poolapp.pool.exception.SessionOverlapException;
 import com.poolapp.pool.util.exception.ApiErrorCode;
 import com.poolapp.pool.util.exception.ApiErrorMessages;
 import com.poolapp.pool.util.exception.ApiErrorResponse;
@@ -42,10 +43,16 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildAndLogError(request, HttpStatus.UNAUTHORIZED, ApiErrorCode.INVALID_CREDENTIALS, "INVALID_CREDENTIALS", ex, Map.of());
     }
 
+    @ExceptionHandler(SessionOverlapException.class)
+    protected ResponseEntity<Object> handleTimeConflictException(SessionOverlapException ex, WebRequest request) {
+        return buildAndLogError(request, HttpStatus.CONFLICT, ApiErrorCode.TIME_CONFLICT, "TIME_CONFLICT", ex, Map.of());
+    }
+
     @ExceptionHandler(EntityAlreadyExistsException.class)
     protected ResponseEntity<Object> handleConflict(EntityAlreadyExistsException ex, WebRequest request) {
         ApiErrorCode errorCode = ex.getErrorCode();
         Map<String, Object> details = Map.of("message", "Email is already taken", "reason", ex.getMessage());
+
 
         return buildAndLogError(request, errorCode.getHttpStatus(), errorCode, "ALREADY_EXISTS", ex, details);
     }
@@ -59,10 +66,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildAndLogError(request, HttpStatus.BAD_REQUEST, ApiErrorCode.VALIDATION_ERROR, "VALIDATION", ex, extraDetails);
     }
 
+
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<Object> handleGlobal(Exception ex, WebRequest request) {
         return buildAndLogError(request, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.INTERNAL_ERROR, "INTERNAL_ERROR", ex, Map.of());
     }
+
 
     private String extractPath(WebRequest request) {
         return request.getDescription(false).replace("uri=", "");

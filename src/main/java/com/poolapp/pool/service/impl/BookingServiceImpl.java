@@ -182,9 +182,9 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public void deleteBookingsBySession(SessionDTO sessionDTO) {
         log.debug("Deleting bookings by session: {}", sessionDTO);
-        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime()).orElseThrow(() -> {
-            log.warn("Session not found for deleting bookings: pool={}, startTime={}", sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
-            String details = String.format("pool=%s, startTime=%s", sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
+        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime()).orElseThrow(() -> {
+            log.warn("Session not found for deleting bookings: pool={}, startTime={}", sessionDTO.getPoolName(), sessionDTO.getStartTime());
+            String details = String.format("pool=%s, startTime=%s", sessionDTO.getPoolName(), sessionDTO.getStartTime());
 
             return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, details);
         });
@@ -195,9 +195,9 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public Long countBookingsBySession(SessionDTO sessionDTO) {
         log.debug("Counting bookings by session: {}", sessionDTO);
-        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime()).orElseThrow(() -> {
-            log.warn("Session not found for counting bookings: pool={}, startTime={}", sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
-            String details = String.format("pool=%s, startTime=%s", sessionDTO.getPoolDTO().getName(), sessionDTO.getStartTime());
+        Session session = sessionService.getSessionByPoolNameAndStartTime(sessionDTO.getPoolName(), sessionDTO.getStartTime()).orElseThrow(() -> {
+            log.warn("Session not found for counting bookings: pool={}, startTime={}", sessionDTO.getPoolName(), sessionDTO.getStartTime());
+            String details = String.format("pool=%s, startTime=%s", sessionDTO.getPoolName(), sessionDTO.getStartTime());
 
             return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, details);
         });
@@ -224,9 +224,9 @@ public class BookingServiceImpl implements BookingService {
             return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, details);
         });
 
-        Session session = sessionService.getSessionByPoolNameAndStartTime(bookingDTO.getSessionDTO().getPoolDTO().getName(), bookingDTO.getSessionDTO().getStartTime()).orElseThrow(() -> {
-            log.warn("Session not found while building BookingId: pool={}, startTime={}", bookingDTO.getSessionDTO().getPoolDTO().getName(), bookingDTO.getSessionDTO().getStartTime());
-            String details = String.format("pool=%s, startTime=%s", bookingDTO.getSessionDTO().getPoolDTO().getName(), bookingDTO.getSessionDTO().getStartTime());
+        Session session = sessionService.getSessionByPoolNameAndStartTime(bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime()).orElseThrow(() -> {
+            log.warn("Session not found while building BookingId: pool={}, startTime={}", bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime());
+            String details = String.format("pool=%s, startTime=%s", bookingDTO.getSessionDTO().getPoolName(), bookingDTO.getSessionDTO().getStartTime());
 
             return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, details);
         });

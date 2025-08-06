@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 @UtilityClass
 public final class ApiErrorMessages {
     private static final Map<String, String> messages = Stream.of(new String[][]{
+            {"TIME_CONFLICT", "Time conflict: overlapping session already exists"},
             {"EMAIL_IS_TAKEN", "Email '%s' is already registered"},
             {"INVALID_CREDENTIALS", "Invalid email or password"},
             {"POOL_NOT_FOUND", "Pool with ID %s not found"},

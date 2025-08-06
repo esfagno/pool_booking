@@ -1,4 +1,4 @@
-package com.poolapp.pool.security;
+package com.poolapp.pool.security.request;
 
 import lombok.Data;
 

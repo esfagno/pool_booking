@@ -36,7 +36,8 @@ public class SecurityConfig {
                                 "/api/auth/**",
                                 "/login",
                                 "/register",
-                                "/success"
+                                "/success",
+                                "/api/sessions/**"
                         ).permitAll()
                         .requestMatchers(
                                 HttpMethod.GET, "/api/bookings/my"
@@ -44,10 +45,11 @@ public class SecurityConfig {
                         .requestMatchers(
                                 HttpMethod.POST, "/api/bookings"
                         ).hasRole("USER")
-                        .requestMatchers("/api/pools/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.GET, "/api/pools/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/pools/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.PUT, "/api/pools/**").hasRole("ADMIN")
+                        .requestMatchers(HttpMethod.DELETE, "/api/pools/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/users/*/subs").hasRole("ADMIN")
-                        .requestMatchers("/api/pools/*/load").hasRole("ADMIN")
-                        .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.POST, "/api/user/create").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
