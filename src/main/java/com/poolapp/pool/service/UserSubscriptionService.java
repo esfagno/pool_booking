@@ -1,6 +1,7 @@
 package com.poolapp.pool.service;
 
 import com.poolapp.pool.dto.UserSubscriptionDTO;
+import com.poolapp.pool.dto.requestDTO.RequestUserSubscriptionDTO;
 import com.poolapp.pool.model.UserSubscription;
 
 import java.time.LocalDateTime;
@@ -10,11 +11,11 @@ import java.util.Optional;
 public interface UserSubscriptionService {
     UserSubscriptionDTO createUserSubscription(UserSubscriptionDTO userSubscriptionDTO);
 
-    UserSubscriptionDTO updateUserSubscription(UserSubscriptionDTO userSubscriptionDTO);
+    UserSubscriptionDTO updateUserSubscription(RequestUserSubscriptionDTO requestUserSubscriptionDTO);
 
-    void deleteUserSubscription(UserSubscriptionDTO userSubscriptionDTO);
+    void deleteUserSubscription(RequestUserSubscriptionDTO requestUserSubscriptionDTO);
 
-    List<UserSubscriptionDTO> findUserSubscriptionsByFilter(UserSubscriptionDTO userSubscriptionDTO);
+    List<UserSubscriptionDTO> findUserSubscriptionsByFilter(RequestUserSubscriptionDTO requestUserSubscriptionDTO);
 
     boolean isUserSubscriptionExpired(UserSubscriptionDTO userSubscriptionDTO, LocalDateTime now);
 

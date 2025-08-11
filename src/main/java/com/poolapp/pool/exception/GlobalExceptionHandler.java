@@ -1,8 +1,5 @@
-package com.poolapp.pool.controller;
+package com.poolapp.pool.exception;
 
-import com.poolapp.pool.exception.EntityAlreadyExistsException;
-import com.poolapp.pool.exception.ModelNotFoundException;
-import com.poolapp.pool.exception.SessionOverlapException;
 import com.poolapp.pool.util.exception.ApiErrorCode;
 import com.poolapp.pool.util.exception.ApiErrorMessages;
 import com.poolapp.pool.util.exception.ApiErrorResponse;

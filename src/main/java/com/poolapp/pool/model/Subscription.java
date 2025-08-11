@@ -15,6 +15,8 @@ import jakarta.persistence.UniqueConstraint;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.JdbcType;
+import org.hibernate.dialect.PostgreSQLEnumJdbcType;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 
@@ -38,6 +40,7 @@ public class Subscription {
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", columnDefinition = "subscription_status", nullable = false)
+    @JdbcType(PostgreSQLEnumJdbcType.class)
     private SubscriptionStatus status;
 
     @CreatedDate

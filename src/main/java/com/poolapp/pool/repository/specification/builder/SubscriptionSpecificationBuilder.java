@@ -1,6 +1,5 @@
 package com.poolapp.pool.repository.specification.builder;
 
-import com.poolapp.pool.dto.SubscriptionDTO;
 import com.poolapp.pool.model.Subscription;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
@@ -13,15 +12,15 @@ import static com.poolapp.pool.repository.specification.SubscriptionSpecificatio
 @RequiredArgsConstructor
 public class SubscriptionSpecificationBuilder {
 
-    public Specification<Subscription> buildSpecification(SubscriptionDTO filterDTO) {
+    public Specification<Subscription> buildSpecification(Subscription filter) {
         Specification<Subscription> spec = Specification.where(null);
 
-        if (filterDTO.getStatus() != null) {
-            spec = spec.and(hasStatus(filterDTO.getStatus()));
+        if (filter.getStatus() != null) {
+            spec = spec.and(hasStatus(filter.getStatus()));
         }
 
-        String typeName = filterDTO.getSubscriptionTypeDTO() != null
-                ? filterDTO.getSubscriptionTypeDTO().getName()
+        String typeName = filter.getSubscriptionType() != null
+                ? filter.getSubscriptionType().getName()
                 : null;
         if (typeName != null) {
             spec = spec.and(hasSubscriptionTypeName(typeName));
