@@ -19,7 +19,9 @@ public enum ApiErrorCode {
     TIME_CONFLICT("TIME_CONFLICT"),
 
     INTERNAL_ERROR("INTERNAL_ERROR"),
-    SERVICE_UNAVAILABLE("SERVICE_UNAVAILABLE");
+    SERVICE_UNAVAILABLE("SERVICE_UNAVAILABLE"),
+
+    BUSINESS_RULE_VIOLATION("BUSINESS_RULE_VIOLATION");
 
     private final String code;
     private final HttpStatus httpStatus;

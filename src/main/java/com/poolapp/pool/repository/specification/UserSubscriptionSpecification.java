@@ -2,6 +2,7 @@ package com.poolapp.pool.repository.specification;
 
 import com.poolapp.pool.model.Subscription;
 import com.poolapp.pool.model.SubscriptionType;
+import com.poolapp.pool.model.User;
 import com.poolapp.pool.model.UserSubscription;
 import com.poolapp.pool.model.enums.SubscriptionStatus;
 import jakarta.persistence.criteria.Join;
@@ -12,7 +13,9 @@ public class UserSubscriptionSpecification {
     public static Specification<UserSubscription> hasUserEmail(String email) {
         return (root, query, cb) -> {
             if (email == null || email.isBlank()) return null;
-            return cb.equal(root.get("user").get("email"), email);
+
+            Join<UserSubscription, User> userJoin = root.join("user");
+            return cb.equal(userJoin.get("email"), email);
         };
     }
 
@@ -40,10 +43,7 @@ public class UserSubscriptionSpecification {
     public static Specification<UserSubscription> isActiveAndHasRemainingBookings(int minBookings) {
         return (root, query, cb) -> {
             Join<UserSubscription, Subscription> subscriptionJoin = root.join("subscription");
-            return cb.and(
-                    cb.equal(subscriptionJoin.get("status"), SubscriptionStatus.ACTIVE),
-                    cb.greaterThan(root.get("remainingBookings"), minBookings)
-            );
+            return cb.and(cb.equal(subscriptionJoin.get("status"), SubscriptionStatus.ACTIVE), cb.greaterThan(root.get("remainingBookings"), minBookings));
         };
     }
 }

@@ -2,25 +2,22 @@ package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.UserSubscriptionDTO;
 import com.poolapp.pool.dto.requestDTO.RequestUserSubscriptionDTO;
-import com.poolapp.pool.exception.BookingAlreadyActiveException;
+import com.poolapp.pool.exception.EntityAlreadyExistsException;
 import com.poolapp.pool.exception.ModelNotFoundException;
 import com.poolapp.pool.exception.UserSubscriptionExpiredException;
-import com.poolapp.pool.mapper.SubscriptionMapper;
 import com.poolapp.pool.mapper.UserSubscriptionMapper;
 import com.poolapp.pool.model.Subscription;
 import com.poolapp.pool.model.User;
 import com.poolapp.pool.model.UserSubscription;
-import com.poolapp.pool.repository.SubscriptionRepository;
+import com.poolapp.pool.model.enums.BookingStatus;
+import com.poolapp.pool.repository.BookingRepository;
 import com.poolapp.pool.repository.UserRepository;
 import com.poolapp.pool.repository.UserSubscriptionRepository;
 import com.poolapp.pool.repository.specification.UserSubscriptionSpecification;
-import com.poolapp.pool.repository.specification.builder.SubscriptionSpecificationBuilder;
 import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecificationBuilder;
 import com.poolapp.pool.service.SubscriptionService;
-import com.poolapp.pool.service.UserService;
 import com.poolapp.pool.service.UserSubscriptionService;
 import com.poolapp.pool.util.exception.ApiErrorCode;
-import com.poolapp.pool.util.exception.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
@@ -37,12 +34,9 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
     private final UserSubscriptionRepository userSubscriptionRepository;
     private final UserRepository userRepository;
-    private final SubscriptionRepository subscriptionRepository;
+    private final BookingRepository bookingRepository;
     private final UserSubscriptionMapper userSubscriptionMapper;
-    private final UserSubscriptionSpecificationBuilder userSubscriptionSpecificationBuilder;
-    private final UserService userService;
-    private final SubscriptionSpecificationBuilder subscriptionSpecificationBuilder;
-    private final SubscriptionMapper subscriptionMapper;
+    private final UserSubscriptionSpecificationBuilder specificationBuilder;
     private final SubscriptionService subscriptionService;
 
     @Override
@@ -51,10 +45,8 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         log.info("Creating UserSubscription for user: {}", dto.getUserEmail());
 
         User user = findUserByEmail(dto.getUserEmail());
-
-        Subscription subscription = subscriptionService.findOrCreateBySubscriptionDTO(dto.getSubscriptionDTO());
-
-        UserSubscription entity = buildUserSubscriptionEntity(dto, user, subscription);
+        Subscription subscription = getOrCreateSubscription(dto);
+        UserSubscription entity = buildSubscriptionEntity(dto, user, subscription);
         UserSubscription saved = userSubscriptionRepository.save(entity);
 
         log.info("UserSubscription created: id={}, user={}", saved.getId(), saved.getUser().getEmail());
@@ -64,10 +56,14 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     @Override
     public UserSubscriptionDTO updateUserSubscription(RequestUserSubscriptionDTO requestDto) {
         validateDto(requestDto);
-        UserSubscription userSubscription = findUserSubscriptionByRequestDto(requestDto).orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, requestDto.getUserEmail()));
+        UserSubscription subscription = findSubscriptionByRequest(requestDto)
+                .orElseThrow(() -> new ModelNotFoundException(
+                        ApiErrorCode.NOT_FOUND,
+                        "Subscription for user " + requestDto.getUserEmail()
+                ));
 
-        userSubscriptionMapper.updateUserSubscriptionFromDto(userSubscription, requestDto);
-        UserSubscription saved = userSubscriptionRepository.save(userSubscription);
+        userSubscriptionMapper.updateUserSubscriptionFromDto(subscription, requestDto);
+        UserSubscription saved = userSubscriptionRepository.save(subscription);
         log.info("UserSubscription updated: id={}", saved.getId());
         return userSubscriptionMapper.toDto(saved);
     }
@@ -75,103 +71,164 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     @Override
     public void deleteUserSubscription(RequestUserSubscriptionDTO requestDto) {
         validateDto(requestDto);
-        UserSubscription userSubscription = findUserSubscriptionByRequestDto(requestDto).orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, requestDto.getUserEmail()));
+        UserSubscription subscription = findSubscriptionByRequest(requestDto)
+                .orElseThrow(() -> new ModelNotFoundException(
+                        ApiErrorCode.NOT_FOUND,
+                        "Subscription for user " + requestDto.getUserEmail()
+                ));
 
-        userSubscriptionRepository.deleteById(userSubscription.getId());
-        log.info("UserSubscription deleted: id={}", userSubscription.getId());
+        userSubscriptionRepository.deleteById(subscription.getId());
+        log.info("UserSubscription deleted: id={}", subscription.getId());
     }
 
     @Override
     public List<UserSubscriptionDTO> findUserSubscriptionsByFilter(RequestUserSubscriptionDTO requestDto) {
         validateDto(requestDto);
-        UserSubscription filter = userSubscriptionMapper.toEntity(requestDto);
-        Specification<UserSubscription> spec = userSubscriptionSpecificationBuilder.buildSpecification(filter);
-        List<UserSubscription> userSubscriptions = userSubscriptionRepository.findAll(spec);
+        Specification<UserSubscription> spec = buildSpecificationFromRequest(requestDto);
+        List<UserSubscription> subscriptions = userSubscriptionRepository.findAll(spec);
 
-        log.debug("Found {} user subscriptions", userSubscriptions.size());
-        return userSubscriptionMapper.toDtoList(userSubscriptions);
+        log.debug("Found {} user subscriptions matching filter", subscriptions.size());
+        return userSubscriptionMapper.toDtoList(subscriptions);
     }
 
     @Override
     public boolean isUserSubscriptionExpired(UserSubscriptionDTO userSubscriptionDTO, LocalDateTime now) {
         log.debug("Checking if UserSubscription is expired for user: {}", userSubscriptionDTO.getUserEmail());
-        UserSubscription filter = findUserSubscriptionByDto(userSubscriptionDTO).orElseThrow(() -> {
-            log.warn("UserSubscription not found during expiration check: user={}", userSubscriptionDTO.getUserEmail());
-            return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, userSubscriptionDTO.getUserEmail());
-        });
-        LocalDateTime expirationDate = filter.getAssignedAt().plusDays(filter.getSubscription().getSubscriptionType().getDurationDays());
+
+        UserSubscription subscription = findUserSubscriptionByDto(userSubscriptionDTO)
+                .orElseThrow(() -> {
+                    log.warn("UserSubscription not found during expiration check: user={}",
+                            userSubscriptionDTO.getUserEmail());
+                    return new ModelNotFoundException(ApiErrorCode.NOT_FOUND, userSubscriptionDTO.getUserEmail());
+                });
+
+        LocalDateTime expirationDate = subscription.getAssignedAt()
+                .plusDays(subscription.getSubscription().getSubscriptionType().getDurationDays());
+
         boolean expired = expirationDate.isBefore(now);
-        log.debug("UserSubscription expired={} for user={}, expirationDate={}", expired, userSubscriptionDTO.getUserEmail(), expirationDate);
+        log.debug("UserSubscription expired={} for user={}, expirationDate={}",
+                expired, userSubscriptionDTO.getUserEmail(), expirationDate);
         return expired;
     }
 
     @Override
-    public Optional<UserSubscription> validateUserSubscription(String userEmail) {
-        log.debug("Validating UserSubscription for user: {}", userEmail);
-        if (userEmail == null || userEmail.isBlank()) {
-            throw new IllegalArgumentException();
+    public void validateUserSubscription(String userEmail) {
+        log.debug("Validating subscription eligibility for user: {}", userEmail);
+        validateEmail(userEmail);
+
+        try {
+            validateActiveSubscription(userEmail);
+        } catch (UserSubscriptionExpiredException e) {
+            log.warn("Expired subscription detected for user: {}", userEmail);
+            throw e;
+        } catch (ModelNotFoundException e) {
+            validateNoActiveSubscription(userEmail);
         }
-
-        Specification<UserSubscription> spec = UserSubscriptionSpecification.isActiveAndHasRemainingBookings(0).and(UserSubscriptionSpecification.hasUserEmail(userEmail));
-
-        return userSubscriptionRepository.findOne(spec).map(subscription -> {
-            if (isSubscriptionExpired(subscription)) {
-                throw new UserSubscriptionExpiredException(ErrorMessages.USER_SUBSCRIPTION_EXPIRED);
-            }
-            return subscription;
-        }).or(() -> {
-            if (userService.hasActiveBooking(userEmail, LocalDateTime.now())) {
-                throw new BookingAlreadyActiveException(ErrorMessages.ALREADY_ACTIVE);
-            }
-            return Optional.empty();
-        });
     }
 
-    private Optional<UserSubscription> findUserSubscriptionByRequestDto(RequestUserSubscriptionDTO dto) {
+    private void validateActiveSubscription(String userEmail) {
+        Specification<UserSubscription> spec = buildActiveSubscriptionSpec(userEmail);
+        UserSubscription subscription = userSubscriptionRepository.findOne(spec)
+                .orElseThrow(() -> new ModelNotFoundException(
+                        ApiErrorCode.NOT_FOUND,
+                        "Active subscription for user " + userEmail
+                ));
+
+        if (isSubscriptionExpired(subscription)) {
+            log.warn("Subscription expired for user: {}", userEmail);
+            throw new UserSubscriptionExpiredException("User subscription has expired");
+        }
+    }
+
+    private void validateNoActiveSubscription(String userEmail) {
+        long activeBookings = countActiveBookings(userEmail);
+        if (activeBookings >= 1) {
+            log.warn("User {} without subscription attempted to create second booking", userEmail);
+            throw new EntityAlreadyExistsException(
+                    "Subscription required. You can have only 1 active booking without subscription"
+            );
+        }
+        log.debug("User {} without subscription has no active bookings - allowed to create booking", userEmail);
+    }
+
+    private Specification<UserSubscription> buildActiveSubscriptionSpec(String userEmail) {
+        return UserSubscriptionSpecification
+                .isActiveAndHasRemainingBookings(0)
+                .and(UserSubscriptionSpecification.hasUserEmail(userEmail));
+    }
+
+    private Specification<UserSubscription> buildSpecificationFromRequest(RequestUserSubscriptionDTO dto) {
         UserSubscription filter = userSubscriptionMapper.toEntity(dto);
-        return findUserSubscriptionByFilter(filter);
+        return specificationBuilder.buildSpecification(filter);
     }
 
-    private Optional<UserSubscription> findUserSubscriptionByDto(UserSubscriptionDTO dto) {
-        UserSubscription filter = userSubscriptionMapper.toEntity(dto);
-        return findUserSubscriptionByFilter(filter);
-    }
-
-    private Optional<UserSubscription> findUserSubscriptionByFilter(UserSubscription filter) {
-        Specification<UserSubscription> spec = userSubscriptionSpecificationBuilder.buildSpecification(filter);
-        return userSubscriptionRepository.findOne(spec);
+    private Subscription getOrCreateSubscription(UserSubscriptionDTO dto) {
+        return subscriptionService.findOrCreateBySubscriptionDTO(dto.getSubscriptionDTO());
     }
 
     private User findUserByEmail(String email) {
-        return userRepository.findByEmail(email).orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, email));
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new ModelNotFoundException(
+                        ApiErrorCode.NOT_FOUND,
+                        "User with email " + email
+                ));
     }
 
-    private Subscription findActiveSubscription(UserSubscriptionDTO dto) {
-        Subscription filter = subscriptionMapper.toEntity(dto.getSubscriptionDTO());
-        Specification<Subscription> spec = subscriptionSpecificationBuilder.buildSpecification(filter);
-        return subscriptionRepository.findOne(spec).orElseThrow(() -> new ModelNotFoundException(ApiErrorCode.NOT_FOUND, "Subscription"));
-    }
-
-    private UserSubscription buildUserSubscriptionEntity(UserSubscriptionDTO dto, User user, Subscription subscription) {
+    private UserSubscription buildSubscriptionEntity(
+            UserSubscriptionDTO dto,
+            User user,
+            Subscription subscription
+    ) {
         UserSubscription entity = userSubscriptionMapper.toEntity(dto);
         entity.setUser(user);
         entity.setSubscription(subscription);
         entity.setAssignedAt(LocalDateTime.now());
-
-        Integer maxBookings = subscription.getSubscriptionType().getMaxBookingsPerMonth();
-        entity.setRemainingBookings(maxBookings);
-
+        entity.setRemainingBookings(subscription.getSubscriptionType().getMaxBookingsPerMonth());
         return entity;
     }
 
     private boolean isSubscriptionExpired(UserSubscription subscription) {
-        UserSubscriptionDTO dto = userSubscriptionMapper.toDto(subscription);
-        return isUserSubscriptionExpired(dto, LocalDateTime.now());
+        LocalDateTime expirationDate = subscription.getAssignedAt()
+                .plusDays(subscription.getSubscription().getSubscriptionType().getDurationDays());
+
+        boolean expired = expirationDate.isBefore(LocalDateTime.now());
+        log.debug("Subscription expired check: user={}, expired={}, expirationDate={}",
+                subscription.getUser().getEmail(), expired, expirationDate);
+        return expired;
+    }
+
+    private long countActiveBookings(String userEmail) {
+        return bookingRepository.countByUser_EmailAndStatus(userEmail, BookingStatus.ACTIVE);
+    }
+
+    private Optional<UserSubscription> findSubscriptionByRequest(RequestUserSubscriptionDTO dto) {
+        UserSubscription filter = userSubscriptionMapper.toEntity(dto);
+        Specification<UserSubscription> spec = buildSpecificationFromRequest(dto);
+        return userSubscriptionRepository.findOne(spec);
+    }
+
+    private Optional<UserSubscription> findUserSubscriptionByDto(UserSubscriptionDTO dto) {
+        UserSubscription filter = userSubscriptionMapper.toEntity(dto);
+        User user = userRepository.findByEmail(dto.getUserEmail())
+                .orElseThrow(() -> new ModelNotFoundException(
+                        ApiErrorCode.NOT_FOUND,
+                        "User with email " + dto.getUserEmail()
+                ));
+        filter.setUser(user);
+
+        Specification<UserSubscription> spec = specificationBuilder.buildSpecification(filter);
+        return userSubscriptionRepository.findOne(spec);
+    }
+
+    private void validateEmail(String email) {
+        if (email == null || email.isBlank()) {
+            throw new IllegalArgumentException("User email must not be null or blank");
+        }
     }
 
     private void validateDto(Object dto) {
         if (dto == null) {
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("DTO must not be null");
         }
     }
 }

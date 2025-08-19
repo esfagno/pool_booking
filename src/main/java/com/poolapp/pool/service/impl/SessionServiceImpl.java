@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -71,6 +72,11 @@ public class SessionServiceImpl implements SessionService {
         return sessionMapper.toDto(saved);
     }
 
+    public List<SessionDTO> createSessions(List<SessionDTO> dtos) {
+        return dtos.stream()
+                .map(this::createSession)
+                .collect(Collectors.toList());
+    }
 
     @Override
     public void changeSessionCapacity(ChangeSessionCapacityRequest request) {

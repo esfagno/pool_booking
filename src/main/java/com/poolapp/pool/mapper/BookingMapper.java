@@ -1,13 +1,16 @@
 package com.poolapp.pool.mapper;
 
 import com.poolapp.pool.dto.BookingDTO;
+import com.poolapp.pool.dto.requestDTO.RequestBookingDTO;
 import com.poolapp.pool.model.Booking;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Builder;
 import org.mapstruct.CollectionMappingStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
@@ -24,6 +27,14 @@ public interface BookingMapper {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "session", source = "sessionDTO")
     Booking toEntity(BookingDTO dto);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "session", source = "requestSessionDTO")
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    Booking toEntity(RequestBookingDTO dto);
 
     @Mapping(target = "userEmail", source = "user.email")
     @Mapping(target = "sessionDTO", source = "session")

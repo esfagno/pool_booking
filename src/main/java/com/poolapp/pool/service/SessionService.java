@@ -25,6 +25,6 @@ public interface SessionService {
 
     void deleteSession(RequestSessionDTO dto);
 
-
+    List<SessionDTO> createSessions(List<SessionDTO> dtos);
 }
 

@@ -29,6 +29,13 @@ public class SessionController {
         return ResponseEntity.ok(sessionService.createSession(dto));
     }
 
+    @PostMapping("/bulk")
+    public ResponseEntity<List<SessionDTO>> createSessions(@Valid @RequestBody List<SessionDTO> dtos) {
+        List<SessionDTO> saved = sessionService.createSessions(dtos);
+        return ResponseEntity.ok(saved);
+    }
+
+
     @PostMapping("/search")
     public ResponseEntity<List<SessionDTO>> searchSessions(@Valid @RequestBody RequestSessionDTO filterDto) {
         return ResponseEntity.ok(sessionService.findSessionsByFilter(filterDto));

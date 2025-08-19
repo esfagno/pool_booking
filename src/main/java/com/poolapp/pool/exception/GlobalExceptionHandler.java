@@ -45,6 +45,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         return buildAndLogError(request, HttpStatus.CONFLICT, ApiErrorCode.TIME_CONFLICT, "TIME_CONFLICT", ex, Map.of());
     }
 
+    @ExceptionHandler(BookingStatusNotActiveException.class)
+    protected ResponseEntity<Object> handleBookingStatusNotActive(BookingStatusNotActiveException ex, WebRequest request) {
+        Map<String, Object> details = Map.of("message", ex.getMessage());
+        return buildAndLogError(request, HttpStatus.CONFLICT, ApiErrorCode.BUSINESS_RULE_VIOLATION, "BUSINESS_RULE", ex, details);
+    }
+
     @ExceptionHandler(EntityAlreadyExistsException.class)
     protected ResponseEntity<Object> handleConflict(EntityAlreadyExistsException ex, WebRequest request) {
         ApiErrorCode errorCode = ex.getErrorCode();
@@ -66,6 +72,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     protected ResponseEntity<Object> handleGlobal(Exception ex, WebRequest request) {
+        log.error("Unexpected error", ex);
         return buildAndLogError(request, HttpStatus.INTERNAL_SERVER_ERROR, ApiErrorCode.INTERNAL_ERROR, "INTERNAL_ERROR", ex, Map.of());
     }
 
