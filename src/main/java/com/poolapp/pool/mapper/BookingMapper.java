@@ -15,7 +15,7 @@ import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {SessionMapper.class}, builder = @Builder(disableBuilder = true),
+@Mapper(componentModel = "spring", uses = {SessionMapper.class, UserSubscriptionMapper.class}, builder = @Builder(disableBuilder = true),
         nullValueCheckStrategy = NullValueCheckStrategy.ALWAYS,
         unmappedTargetPolicy = ReportingPolicy.ERROR,
         collectionMappingStrategy = CollectionMappingStrategy.SETTER_PREFERRED)
@@ -26,6 +26,7 @@ public interface BookingMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "session", source = "sessionDTO")
+    @Mapping(target = "userSubscription", source = "userSubscriptionDTO")
     Booking toEntity(BookingDTO dto);
 
     @Mapping(target = "id", ignore = true)
@@ -33,11 +34,13 @@ public interface BookingMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "session", source = "requestSessionDTO")
+    @Mapping(target = "userSubscription", source = "requestUserSubscriptionDTO")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     Booking toEntity(RequestBookingDTO dto);
 
     @Mapping(target = "userEmail", source = "user.email")
     @Mapping(target = "sessionDTO", source = "session")
+    @Mapping(target = "userSubscriptionDTO", source = "userSubscription")
     BookingDTO toDto(Booking booking);
 
     @Mapping(target = "userEmail", source = "user.email")
@@ -49,5 +52,6 @@ public interface BookingMapper {
     @Mapping(target = "updatedAt", ignore = true)
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "session", source = "sessionDTO")
+    @Mapping(target = "userSubscription", source = "userSubscriptionDTO")
     void updateBookingFromDto(@MappingTarget Booking booking, BookingDTO dto);
 }

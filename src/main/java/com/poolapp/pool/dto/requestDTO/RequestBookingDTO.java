@@ -30,4 +30,6 @@ public class RequestBookingDTO {
 
     private BookingStatus status;
 
+    private RequestUserSubscriptionDTO requestUserSubscriptionDTO;
+
 }

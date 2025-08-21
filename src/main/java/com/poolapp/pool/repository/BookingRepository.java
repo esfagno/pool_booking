@@ -29,4 +29,8 @@ public interface BookingRepository extends JpaRepository<Booking, BookingId>, Jp
 
     long countByUser_EmailAndStatus(String email, BookingStatus status);
 
+    boolean existsByUser_EmailAndSession_Pool_NameAndSession_StartTimeAndStatus(String userEmail, String poolName, LocalDateTime startTime, BookingStatus status);
+
+    List<Booking> findByUser_EmailAndSession_Pool_NameAndSession_StartTimeAndStatus(String userEmail, String poolName, LocalDateTime startTime, BookingStatus status);
+
 }

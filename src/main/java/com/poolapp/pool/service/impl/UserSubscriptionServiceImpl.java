@@ -22,6 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -112,6 +113,23 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     }
 
     @Override
+    public Optional<UserSubscription> findActiveSubscriptionForUser(String userEmail) {
+        log.debug("Finding active subscription for user: {}", userEmail);
+        validateEmail(userEmail);
+
+        Specification<UserSubscription> spec = specificationBuilder.buildActiveSubscriptionForUserSpec(userEmail);
+
+        return userSubscriptionRepository.findAll(spec).stream()
+                .filter(sub -> sub.getAssignedAt()
+                        .plusDays(sub.getSubscription()
+                                .getSubscriptionType()
+                                .getDurationDays())
+                        .isAfter(LocalDateTime.now()))
+                .findFirst();
+    }
+
+
+    @Override
     public void validateUserSubscription(String userEmail) {
         log.debug("Validating subscription eligibility for user: {}", userEmail);
         validateEmail(userEmail);
@@ -124,6 +142,35 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         } catch (ModelNotFoundException e) {
             validateNoActiveSubscription(userEmail);
         }
+    }
+
+    @Override
+    @Transactional
+    public void incrementRemainingBookings(Integer subscriptionId) {
+        userSubscriptionRepository.findById(subscriptionId).ifPresent(sub -> {
+            int maxBookings = sub.getSubscription().getSubscriptionType().getMaxBookingsPerMonth();
+            int newCount = Math.min(sub.getRemainingBookings() + 1, maxBookings);
+            sub.setRemainingBookings(newCount);
+            userSubscriptionRepository.save(sub);
+            log.debug("Incremented remaining bookings for subscription id={}. Remaining: {}",
+                    subscriptionId, newCount);
+        });
+    }
+
+    @Override
+    @Transactional
+    public void decrementRemainingBookings(Integer subscriptionId) {
+        userSubscriptionRepository.findById(subscriptionId).ifPresent(sub -> {
+            if (sub.getRemainingBookings() <= 0) {
+                log.warn("Cannot decrement: no remaining bookings for subscription {}", subscriptionId);
+                return;
+            }
+
+            sub.setRemainingBookings(sub.getRemainingBookings() - 1);
+            userSubscriptionRepository.save(sub);
+            log.debug("Decremented remaining bookings for subscription id={}. Remaining: {}",
+                    subscriptionId, sub.getRemainingBookings());
+        });
     }
 
     private void validateActiveSubscription(String userEmail) {

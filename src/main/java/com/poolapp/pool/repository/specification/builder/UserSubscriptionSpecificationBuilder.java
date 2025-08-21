@@ -6,6 +6,8 @@ import com.poolapp.pool.repository.specification.UserSubscriptionSpecification;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 import static com.poolapp.pool.repository.specification.UserSubscriptionSpecification.hasSubscriptionStatus;
 import static com.poolapp.pool.repository.specification.UserSubscriptionSpecification.hasSubscriptionTypeName;
 import static com.poolapp.pool.repository.specification.UserSubscriptionSpecification.hasUserEmail;
@@ -47,4 +49,15 @@ public class UserSubscriptionSpecificationBuilder {
                 .and(UserSubscriptionSpecification.hasSubscriptionStatus(SubscriptionStatus.ACTIVE))
                 .and(UserSubscriptionSpecification.hasRemainingBookingsGreaterThan(minRemainingBookings));
     }
+
+    public Specification<UserSubscription> buildActiveSubscriptionForUserSpec(String userEmail) {
+        Specification<UserSubscription> spec = Specification.where(null);
+
+        spec = spec.and(UserSubscriptionSpecification.hasUserEmail(userEmail));
+        spec = spec.and(UserSubscriptionSpecification.isActiveAndHasRemainingBookings(0));
+        spec = spec.and(UserSubscriptionSpecification.isAssignedBefore(LocalDateTime.now()));
+
+        return spec;
+    }
+
 }

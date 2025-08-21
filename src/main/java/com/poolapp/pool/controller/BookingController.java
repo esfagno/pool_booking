@@ -29,12 +29,12 @@ public class BookingController {
 
     private final BookingService bookingService;
 
-    @PostMapping
+    @PostMapping//работает
     public ResponseEntity<BookingDTO> createBooking(@Valid @RequestBody BookingDTO bookingDTO) {
         return ResponseEntity.ok(bookingService.createBooking(bookingDTO));
     }
 
-    @PostMapping("/search")
+    @PostMapping("/search")//заработало
     public ResponseEntity<List<BookingDTO>> searchBookings(@Valid @RequestBody RequestBookingDTO filterDTO) {
         return ResponseEntity.ok(bookingService.findBookingsByFilter(filterDTO));
     }
@@ -46,13 +46,13 @@ public class BookingController {
                 bookingService.updateBooking(updateRequest.getCurrentBooking(), updateRequest.getNewBooking()));
     }
 
-    @DeleteMapping
+    @DeleteMapping//рабоатет
     public ResponseEntity<Void> deleteBooking(@Valid @RequestBody BookingDTO bookingDTO) {
         bookingService.deleteBooking(bookingDTO);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/cancel")
+    @PostMapping("/cancel")//работает
     public ResponseEntity<Void> cancelBooking(@Valid @RequestBody BookingDTO bookingDTO) {
         bookingService.cancelBooking(bookingDTO);
         return ResponseEntity.noContent().build();
@@ -81,3 +81,4 @@ public class BookingController {
 //при создании время create update автоматически активная то есть
 //новое дто + раскидать по методам сильно много кода
 //а так работает+подписка тоже работает
+//проверить как письмо отсылается

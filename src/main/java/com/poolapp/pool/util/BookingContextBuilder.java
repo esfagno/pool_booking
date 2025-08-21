@@ -35,7 +35,7 @@ public class BookingContextBuilder {
 
     public BookingContext build(String userEmail, RequestSessionDTO requestSessionDTO) {
         SessionDTO sessionDTO = SessionDTO.builder()
-                .poolName(requestSessionDTO.getPoolName())
+                .poolName(requestSessionDTO.getRequestPoolDTO().getName())
                 .startTime(requestSessionDTO.getStartTime())
                 .build();
         return build(userEmail, sessionDTO);

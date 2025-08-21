@@ -8,6 +8,8 @@ import com.poolapp.pool.model.enums.SubscriptionStatus;
 import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDateTime;
+
 public class UserSubscriptionSpecification {
 
     public static Specification<UserSubscription> hasUserEmail(String email) {
@@ -46,4 +48,9 @@ public class UserSubscriptionSpecification {
             return cb.and(cb.equal(subscriptionJoin.get("status"), SubscriptionStatus.ACTIVE), cb.greaterThan(root.get("remainingBookings"), minBookings));
         };
     }
+
+    public static Specification<UserSubscription> isAssignedBefore(LocalDateTime time) {
+        return (root, query, cb) -> cb.lessThanOrEqualTo(root.get("assignedAt"), time);
+    }
+
 }

@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MapsId;
 import jakarta.persistence.Table;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -47,6 +48,10 @@ public class Booking {
     @Column(nullable = false)
     @JdbcType(PostgreSQLEnumJdbcType.class)
     private BookingStatus status;
+
+    @ManyToOne
+    @JoinColumn(name = "user_subscription_id")
+    private UserSubscription userSubscription;
 
     @CreatedDate
     @Column(updatable = false)

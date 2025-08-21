@@ -98,11 +98,11 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public SessionDTO updateSession(RequestSessionDTO dto) {
-        Session session = getExistingSession(dto.getPoolName(), dto.getStartTime());
+        Session session = getExistingSession(dto.getRequestPoolDTO().getName(), dto.getStartTime());
 
         Session incoming = sessionMapper.toEntity(dto);
         sessionMapper.updateSessionWith(session, incoming);
-        session.setPool(poolService.getPoolByName(dto.getPoolName()));
+        session.setPool(poolService.getPoolByName(dto.getRequestPoolDTO().getName()));
 
         Session updated = sessionRepository.save(session);
         return sessionMapper.toDto(updated);
@@ -110,7 +110,7 @@ public class SessionServiceImpl implements SessionService {
 
     @Override
     public void deleteSession(RequestSessionDTO dto) {
-        Session session = getExistingSession(dto.getPoolName(), dto.getStartTime());
+        Session session = getExistingSession(dto.getRequestPoolDTO().getName(), dto.getStartTime());
         sessionRepository.delete(session);
     }
 

@@ -1,5 +1,6 @@
 package com.poolapp.pool.dto;
 
+import com.poolapp.pool.dto.validation.HasTimeRange;
 import com.poolapp.pool.validation.EndTimeAfterStartTime;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -15,7 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EndTimeAfterStartTime
-public class SessionDTO {
+public class SessionDTO implements HasTimeRange {
 
     @Size(max = 255)
     @NotNull

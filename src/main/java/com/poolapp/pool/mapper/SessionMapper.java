@@ -31,7 +31,7 @@ public interface SessionMapper {
     @Mapping(target = "currentCapacity", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    @Mapping(target = "pool", ignore = true)
+    @Mapping(target = "pool", source = "requestPoolDTO")
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     Session toEntity(RequestSessionDTO dto);
 
