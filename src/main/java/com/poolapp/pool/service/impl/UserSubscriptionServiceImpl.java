@@ -18,6 +18,7 @@ import com.poolapp.pool.repository.specification.builder.UserSubscriptionSpecifi
 import com.poolapp.pool.service.SubscriptionService;
 import com.poolapp.pool.service.UserSubscriptionService;
 import com.poolapp.pool.util.exception.ApiErrorCode;
+import com.poolapp.pool.util.exception.ErrorMessages;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.jpa.domain.Specification;
@@ -60,7 +61,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         UserSubscription subscription = findSubscriptionByRequest(requestDto)
                 .orElseThrow(() -> new ModelNotFoundException(
                         ApiErrorCode.NOT_FOUND,
-                        "Subscription for user " + requestDto.getUserEmail()
+                        String.format("Subscription for user %s", requestDto.getUserEmail())
                 ));
 
         userSubscriptionMapper.updateUserSubscriptionFromDto(subscription, requestDto);
@@ -75,7 +76,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         UserSubscription subscription = findSubscriptionByRequest(requestDto)
                 .orElseThrow(() -> new ModelNotFoundException(
                         ApiErrorCode.NOT_FOUND,
-                        "Subscription for user " + requestDto.getUserEmail()
+                        String.format("Subscription for user %s", requestDto.getUserEmail())
                 ));
 
         userSubscriptionRepository.deleteById(subscription.getId());
@@ -128,7 +129,6 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
                 .findFirst();
     }
 
-
     @Override
     public void validateUserSubscription(String userEmail) {
         log.debug("Validating subscription eligibility for user: {}", userEmail);
@@ -178,12 +178,12 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         UserSubscription subscription = userSubscriptionRepository.findOne(spec)
                 .orElseThrow(() -> new ModelNotFoundException(
                         ApiErrorCode.NOT_FOUND,
-                        "Active subscription for user " + userEmail
+                        String.format("Active subscription for user %s", userEmail)
                 ));
 
         if (isSubscriptionExpired(subscription)) {
             log.warn("Subscription expired for user: {}", userEmail);
-            throw new UserSubscriptionExpiredException("User subscription has expired");
+            throw new UserSubscriptionExpiredException(ErrorMessages.USER_SUBSCRIPTION_EXPIRED);
         }
     }
 
@@ -191,9 +191,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         long activeBookings = countActiveBookings(userEmail);
         if (activeBookings >= 1) {
             log.warn("User {} without subscription attempted to create second booking", userEmail);
-            throw new EntityAlreadyExistsException(
-                    "Subscription required. You can have only 1 active booking without subscription"
-            );
+            throw new EntityAlreadyExistsException(ErrorMessages.ENTITY_ALREADY_EXISTS);
         }
         log.debug("User {} without subscription has no active bookings - allowed to create booking", userEmail);
     }
@@ -217,7 +215,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ModelNotFoundException(
                         ApiErrorCode.NOT_FOUND,
-                        "User with email " + email
+                        String.format("User with email %s", email)
                 ));
     }
 
@@ -249,7 +247,6 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
     }
 
     private Optional<UserSubscription> findSubscriptionByRequest(RequestUserSubscriptionDTO dto) {
-        UserSubscription filter = userSubscriptionMapper.toEntity(dto);
         Specification<UserSubscription> spec = buildSpecificationFromRequest(dto);
         return userSubscriptionRepository.findOne(spec);
     }
@@ -259,7 +256,7 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
         User user = userRepository.findByEmail(dto.getUserEmail())
                 .orElseThrow(() -> new ModelNotFoundException(
                         ApiErrorCode.NOT_FOUND,
-                        "User with email " + dto.getUserEmail()
+                        String.format("User with email %s", dto.getUserEmail())
                 ));
         filter.setUser(user);
 
@@ -269,13 +266,13 @@ public class UserSubscriptionServiceImpl implements UserSubscriptionService {
 
     private void validateEmail(String email) {
         if (email == null || email.isBlank()) {
-            throw new IllegalArgumentException("User email must not be null or blank");
+            throw new IllegalArgumentException();
         }
     }
 
     private void validateDto(Object dto) {
         if (dto == null) {
-            throw new IllegalArgumentException("DTO must not be null");
+            throw new IllegalArgumentException();
         }
     }
 }

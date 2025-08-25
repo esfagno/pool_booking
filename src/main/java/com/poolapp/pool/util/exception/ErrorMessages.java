@@ -17,9 +17,9 @@ public final class ErrorMessages {
     public static final String USER_SUBSCRIPTION_NOT_FOUND = "User subscription with ID %s not found";
     public static final String USER_SUBSCRIPTION_EXPIRED = "User subscription has expired: %s";
     public static final String EMAIL_IS_TAKEN = "Email '%s' is already registered";
-    public static final String ROLE_NOT_FOUND = "Role '%s' not found";
     public static final String REFRESH_TOKEN = "Refresh token is invalid or expired";
     public static final String ACCESS_DENIED_NOT_ADMIN_CHANGING_ROLE = "ACCESS_DENIED: User ID={} tried to change role for another user (email=<redacted>) but is not admin";
     public static final String ACCESS_DENIED_ADMIN_MODIFYING_SELF_ROLE = "ACCESS_DENIED: Admin ID={} attempted to modify their own role";
     public static final String ACCESS_DENIED_USER_MODIFYING_OTHER = "ACCESS_DENIED: User ID={} tried to modify another user (email=<redacted>) without permission";
+    public static final String ENTITY_ALREADY_EXISTS = "Entity with ID %s already exists";
 }

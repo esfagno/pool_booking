@@ -1,7 +1,6 @@
 package com.poolapp.pool.service.impl;
 
 import com.poolapp.pool.dto.SubscriptionDTO;
-import com.poolapp.pool.dto.SubscriptionTypeDTO;
 import com.poolapp.pool.dto.requestDTO.RequestSubscriptionDTO;
 import com.poolapp.pool.mapper.SubscriptionMapper;
 import com.poolapp.pool.model.Subscription;
@@ -23,44 +22,37 @@ public class SubscriptionServiceImpl implements SubscriptionService {
 
     private final SubscriptionRepository subscriptionRepository;
     private final SubscriptionMapper subscriptionMapper;
-    private final SubscriptionSpecificationBuilder subscriptionSpecificationBuilder;
+    private final SubscriptionSpecificationBuilder specificationBuilder;
     private final SubscriptionTypeService subscriptionTypeService;
 
     @Override
     @Transactional
-    public SubscriptionDTO createSubscription(SubscriptionDTO subscriptionDTO) {
-        SubscriptionTypeDTO typeDTO = subscriptionDTO.getSubscriptionTypeDTO();
-        SubscriptionType subscriptionType = subscriptionTypeService.findByNameOrCreateNew(typeDTO);
-
-        Subscription subscription = subscriptionMapper.toEntity(subscriptionDTO);
-        subscription.setSubscriptionType(subscriptionType);
-
-        Subscription saved = subscriptionRepository.save(subscription);
-
-        return subscriptionMapper.toDto(saved);
+    public SubscriptionDTO createSubscription(SubscriptionDTO dto) {
+        return subscriptionMapper.toDto(createOrUpdateSubscription(dto, false));
     }
 
-
+    @Override
     public List<SubscriptionDTO> findAllSubscriptionsByFilter(RequestSubscriptionDTO filterDTO) {
-        Subscription filter = subscriptionMapper.toEntity(filterDTO);
-        Specification<Subscription> spec = subscriptionSpecificationBuilder.buildSpecification(filter);
-        List<Subscription> subscriptions = subscriptionRepository.findAll(spec);
-        return subscriptionMapper.toDtoList(subscriptions);
+        Specification<Subscription> spec = specificationBuilder.buildSpecification(subscriptionMapper.toEntity(filterDTO));
+        return subscriptionMapper.toDtoList(subscriptionRepository.findAll(spec));
     }
 
     @Override
     @Transactional
-    public Subscription findOrCreateBySubscriptionDTO(SubscriptionDTO subscriptionDTO) {
-        SubscriptionType subscriptionType = subscriptionTypeService.findByNameOrCreateNew(subscriptionDTO.getSubscriptionTypeDTO());
-
-        return subscriptionRepository
-                .findBySubscriptionTypeAndStatus(subscriptionType, subscriptionDTO.getStatus())
-                .orElseGet(() -> {
-                    Subscription subscription = subscriptionMapper.toEntity(subscriptionDTO);
-                    subscription.setSubscriptionType(subscriptionType);
-                    return subscriptionRepository.save(subscription);
-                });
+    public Subscription findOrCreateBySubscriptionDTO(SubscriptionDTO dto) {
+        return createOrUpdateSubscription(dto, true);
     }
 
-}
+    private Subscription createOrUpdateSubscription(SubscriptionDTO dto, boolean returnEntity) {
+        SubscriptionType subscriptionType = subscriptionTypeService.findByNameOrCreateNew(dto.getSubscriptionTypeDTO());
 
+        return subscriptionRepository.findBySubscriptionTypeAndStatus(subscriptionType, dto.getStatus()).map(existing -> {
+            subscriptionMapper.updateSubscriptionFromDto(existing, dto);
+            return subscriptionRepository.save(existing);
+        }).orElseGet(() -> {
+            Subscription subscription = subscriptionMapper.toEntity(dto);
+            subscription.setSubscriptionType(subscriptionType);
+            return subscriptionRepository.save(subscription);
+        });
+    }
+}

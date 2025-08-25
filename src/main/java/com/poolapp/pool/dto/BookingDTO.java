@@ -1,6 +1,5 @@
 package com.poolapp.pool.dto;
 
-import com.poolapp.pool.model.UserSubscription;
 import com.poolapp.pool.model.enums.BookingStatus;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;

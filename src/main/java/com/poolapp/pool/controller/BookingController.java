@@ -29,40 +29,35 @@ public class BookingController {
 
     private final BookingService bookingService;
 
-    @PostMapping//работает
+    @PostMapping
     public ResponseEntity<BookingDTO> createBooking(@Valid @RequestBody BookingDTO bookingDTO) {
         return ResponseEntity.ok(bookingService.createBooking(bookingDTO));
     }
 
-    @PostMapping("/search")//заработало
+    @PostMapping("/search")
     public ResponseEntity<List<BookingDTO>> searchBookings(@Valid @RequestBody RequestBookingDTO filterDTO) {
         return ResponseEntity.ok(bookingService.findBookingsByFilter(filterDTO));
     }
 
     @PatchMapping
-    public ResponseEntity<BookingDTO> updateBooking(
-            @Valid @RequestBody BookingUpdateRequest updateRequest) {
-        return ResponseEntity.ok(
-                bookingService.updateBooking(updateRequest.getCurrentBooking(), updateRequest.getNewBooking()));
+    public ResponseEntity<BookingDTO> updateBooking(@Valid @RequestBody BookingUpdateRequest updateRequest) {
+        return ResponseEntity.ok(bookingService.updateBooking(updateRequest.getCurrentBooking(), updateRequest.getNewBooking()));
     }
 
-    @DeleteMapping//рабоатет
+    @DeleteMapping
     public ResponseEntity<Void> deleteBooking(@Valid @RequestBody BookingDTO bookingDTO) {
         bookingService.deleteBooking(bookingDTO);
         return ResponseEntity.noContent().build();
     }
 
-    @PostMapping("/cancel")//работает
+    @PostMapping("/cancel")
     public ResponseEntity<Void> cancelBooking(@Valid @RequestBody BookingDTO bookingDTO) {
         bookingService.cancelBooking(bookingDTO);
         return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/exists")
-    public ResponseEntity<Boolean> hasUserBooked(
-            @RequestParam String userEmail,
-            @RequestParam String poolName,
-            @RequestParam LocalDateTime sessionStartTime) {
+    public ResponseEntity<Boolean> hasUserBooked(@RequestParam String userEmail, @RequestParam String poolName, @RequestParam LocalDateTime sessionStartTime) {
         return ResponseEntity.ok(bookingService.hasUserBookedForSession(userEmail, poolName, sessionStartTime));
     }
 
@@ -77,8 +72,3 @@ public class BookingController {
         return ResponseEntity.ok(bookingService.countBookingsBySession(sessionDTO));
     }
 }
-
-//при создании время create update автоматически активная то есть
-//новое дто + раскидать по методам сильно много кода
-//а так работает+подписка тоже работает
-//проверить как письмо отсылается
