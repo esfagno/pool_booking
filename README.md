@@ -37,7 +37,19 @@
 - **GitHub** – хостинг и CI/CD (опционально)
 
 ## Структура проекта
-<pre> ```text src/main/java/com/example/poolbooking │── controller/ # REST-контроллеры │── dto/ # DTO-классы (вход/выход) │── entity/ # JPA-сущности │── exception/ # Кастомные исключения │── mapper/ # MapStruct-мапперы │── repository/ # Spring Data JPA репозитории │── security/ # JWT фильтры, конфигурация Spring Security │── service/ # Интерфейсы сервисов │── service/impl/ # Реализации сервисов └── PoolBookingApplication.java ``` </pre>
+```text
+src/main/java/com/example/poolbooking
+│── controller/        # REST-контроллеры
+│── dto/               # DTO-классы (вход/выход)
+│── entity/            # JPA-сущности
+│── exception/         # Кастомные исключения
+│── mapper/            # MapStruct-мапперы
+│── repository/        # Spring Data JPA репозитории
+│── security/          # JWT фильтры, конфигурация Spring Security
+│── service/           # Интерфейсы сервисов
+│── service/impl/      # Реализации сервисов
+└── PoolBookingApplication.java
+```
 
 ## Тестирование
 Проект покрыт модульными тестами с использованием:
