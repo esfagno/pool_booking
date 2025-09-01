@@ -1,7 +1,7 @@
-#Online Pool Booking System
+# Online Pool Booking System
 Система онлайн-записи в бассейн, позволяющая пользователям бронировать сеансы, управлять абонементами и просматривать расписание, а администраторам — контролировать доступность бассейнов и загруженность.
 
-##Основной функционал
+## Основной функционал
 
 **Для пользователей:**
 - Регистрация и авторизация (JWT)
@@ -37,17 +37,7 @@
 - **GitHub** – хостинг и CI/CD (опционально)
 
 ## Структура проекта
-src/main/java/com/example/poolbooking
-│── controller/ # REST-контроллеры
-│── dto/ # DTO-классы (вход/выход)
-│── entity/ # JPA-сущности
-│── exception/ # Кастомные исключения
-│── mapper/ # MapStruct-мапперы
-│── repository/ # Spring Data JPA репозитории
-│── security/ # JWT фильтры, конфигурация Spring Security
-│── service/ # Интерфейсы сервисов
-│── service/impl/ # Реализации сервисов
-└── PoolBookingApplication.java
+<pre> ```text src/main/java/com/example/poolbooking │── controller/ # REST-контроллеры │── dto/ # DTO-классы (вход/выход) │── entity/ # JPA-сущности │── exception/ # Кастомные исключения │── mapper/ # MapStruct-мапперы │── repository/ # Spring Data JPA репозитории │── security/ # JWT фильтры, конфигурация Spring Security │── service/ # Интерфейсы сервисов │── service/impl/ # Реализации сервисов └── PoolBookingApplication.java ``` </pre>
 
 ## Тестирование
 Проект покрыт модульными тестами с использованием:
