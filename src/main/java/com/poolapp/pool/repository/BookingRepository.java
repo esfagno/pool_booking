@@ -25,4 +25,12 @@ public interface BookingRepository extends JpaRepository<Booking, BookingId>, Jp
 
     List<Booking> findBySession_StartTimeBeforeAndStatus(LocalDateTime time, BookingStatus status);
 
+    List<Booking> findByUser_EmailAndSession_Pool_NameAndSession_StartTime(String email, String poolName, LocalDateTime startTime);
+
+    long countByUser_EmailAndStatus(String email, BookingStatus status);
+
+    boolean existsByUser_EmailAndSession_Pool_NameAndSession_StartTimeAndStatus(String userEmail, String poolName, LocalDateTime startTime, BookingStatus status);
+
+    List<Booking> findByUser_EmailAndSession_Pool_NameAndSession_StartTimeAndStatus(String userEmail, String poolName, LocalDateTime startTime, BookingStatus status);
+
 }

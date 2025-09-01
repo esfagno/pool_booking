@@ -27,5 +27,9 @@ public class BookingSpecification {
     public static Specification<Booking> hasSessionStartTime(LocalDateTime startTime) {
         return (root, query, cb) -> cb.equal(root.get("session").get("startTime"), startTime);
     }
+
+    public static Specification<Booking> hasSubscriptionId(Long subscriptionId) {
+        return (root, query, cb) -> cb.equal(root.get("userSubscription").get("id"), subscriptionId);
+    }
 }
 

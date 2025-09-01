@@ -1,4 +1,4 @@
-package com.poolapp.pool.security;
+package com.poolapp.pool.security.request;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;

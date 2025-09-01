@@ -2,6 +2,8 @@ package com.poolapp.pool.service;
 
 import com.poolapp.pool.dto.PoolDTO;
 import com.poolapp.pool.dto.PoolScheduleDTO;
+import com.poolapp.pool.dto.RequestPoolDTO;
+import com.poolapp.pool.dto.requestDTO.RequestPoolScheduleDTO;
 import com.poolapp.pool.model.Pool;
 
 import java.util.List;
@@ -11,19 +13,19 @@ public interface PoolService {
 
     Pool getPoolByName(String name);
 
-    List<PoolDTO> searchPools(PoolDTO pool);
+    List<PoolDTO> searchPools(RequestPoolDTO pool);
 
-    PoolDTO updatePool(String poolName, PoolDTO updatedPool);
+    PoolDTO updatePool(RequestPoolDTO updatedPool);
 
-    void deletePool(PoolDTO updatedPool);
+    void deletePool(RequestPoolDTO updatedPool);
 
-    PoolDTO updateCapacity(PoolDTO updatedPool);
+    PoolDTO updateCapacity(RequestPoolDTO updatedPool);
 
     PoolScheduleDTO createOrUpdateSchedule(PoolScheduleDTO dto);
 
-    PoolScheduleDTO updateSchedule(PoolScheduleDTO dto);
+    PoolScheduleDTO updateSchedule(RequestPoolScheduleDTO dto);
 
-    void deleteScheduleByDay(PoolDTO poolDTO, Short dayOfWeek);
+    void deleteScheduleByDay(RequestPoolScheduleDTO dto);
 
     List<PoolScheduleDTO> getSchedulesForPool(PoolDTO dto);
 

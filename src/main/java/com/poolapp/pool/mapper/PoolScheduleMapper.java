@@ -1,8 +1,10 @@
 package com.poolapp.pool.mapper;
 
 import com.poolapp.pool.dto.PoolScheduleDTO;
+import com.poolapp.pool.dto.requestDTO.RequestPoolScheduleDTO;
 import com.poolapp.pool.model.Pool;
 import com.poolapp.pool.model.PoolSchedule;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Builder;
 import org.mapstruct.CollectionMappingStrategy;
 import org.mapstruct.Context;
@@ -10,6 +12,7 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
@@ -25,8 +28,14 @@ public interface PoolScheduleMapper {
     @Mapping(target = "id", ignore = true)
     PoolSchedule toEntity(PoolScheduleDTO dto, @Context Pool contextPool);
 
+    @Mapping(source = "poolName", target = "pool.name")
+    @Mapping(target = "id", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    PoolSchedule toEntity(RequestPoolScheduleDTO dto, @Context Pool contextPool);
+
     List<PoolScheduleDTO> toDtoList(List<PoolSchedule> schedules);
 
     @Mapping(target = "id", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     PoolSchedule updateScheduleWith(@MappingTarget PoolSchedule existing, PoolSchedule updated);
 }

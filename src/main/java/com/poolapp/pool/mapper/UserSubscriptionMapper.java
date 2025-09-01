@@ -1,13 +1,16 @@
 package com.poolapp.pool.mapper;
 
 import com.poolapp.pool.dto.UserSubscriptionDTO;
+import com.poolapp.pool.dto.requestDTO.RequestUserSubscriptionDTO;
 import com.poolapp.pool.model.UserSubscription;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Builder;
 import org.mapstruct.CollectionMappingStrategy;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 import org.mapstruct.NullValueCheckStrategy;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 
 import java.util.List;
@@ -25,6 +28,14 @@ public interface UserSubscriptionMapper {
     @Mapping(target = "subscription", source = "subscriptionDTO")
     UserSubscription toEntity(UserSubscriptionDTO dto);
 
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "assignedAt", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "remainingBookings", ignore = true)
+    @Mapping(target = "subscription", source = "requestSubscriptionDTO")
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    UserSubscription toEntity(RequestUserSubscriptionDTO dto);
+
     @Mapping(target = "userEmail", source = "user.email")
     @Mapping(target = "subscriptionDTO", source = "subscription")
     UserSubscriptionDTO toDto(UserSubscription userSubscription);
@@ -39,6 +50,16 @@ public interface UserSubscriptionMapper {
     @Mapping(target = "user", ignore = true)
     @Mapping(target = "subscription", source = "subscriptionDTO")
     void updateUserSubscriptionFromDto(@MappingTarget UserSubscription userSubscription, UserSubscriptionDTO userSubscriptionDTO);
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "assignedAt", ignore = true)
+    @Mapping(target = "remainingBookings", ignore = true)
+    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "subscription", source = "requestSubscriptionDTO")
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateUserSubscriptionFromDto(@MappingTarget UserSubscription userSubscription, RequestUserSubscriptionDTO requestUserSubscriptionDTO);
+
+
 }
 
 

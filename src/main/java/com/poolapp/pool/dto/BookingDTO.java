@@ -28,10 +28,11 @@ public class BookingDTO {
     @NotNull
     private SessionDTO sessionDTO;
 
-    @NotNull
+    @Valid
+    private UserSubscriptionDTO userSubscriptionDTO;
+
     private LocalDateTime bookingTime;
 
-    @NotNull
     private BookingStatus status;
 
 }

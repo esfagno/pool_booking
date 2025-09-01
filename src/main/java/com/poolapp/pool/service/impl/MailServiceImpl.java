@@ -12,24 +12,26 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class MailServiceImpl implements MailService {
 
-    private final JavaMailSender javaMailSender;
-
+    private final JavaMailSender mailSender;
 
     @Value("${spring.booking-confirmation.subject}")
-    private String bookingConfirmationSubject;
+    private String subjectTemplate;
 
     @Value("${spring.booking-confirmation.body}")
-    private String bookingConfirmationBody;
+    private String bodyTemplate;
 
     @Override
     public void sendBookingConfirmationEmail(String toEmail, SessionDTO sessionDTO) {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(toEmail);
-        message.setSubject(bookingConfirmationSubject);
-        message.setText(String.format(bookingConfirmationBody,
-                sessionDTO.getPoolDTO().getName(),
-                sessionDTO.getStartTime().toString()));
-        javaMailSender.send(message);
+        message.setSubject(formatTemplate(subjectTemplate, sessionDTO));
+        message.setText(formatTemplate(bodyTemplate, sessionDTO));
+        mailSender.send(message);
+    }
+
+    private String formatTemplate(String template, SessionDTO sessionDTO) {
+        return template
+                .replace("{poolName}", sessionDTO.getPoolName())
+                .replace("{startTime}", sessionDTO.getStartTime().toString());
     }
 }
-

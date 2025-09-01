@@ -6,6 +6,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
+
 @Component
 @RequiredArgsConstructor
 public class SessionSpecificationBuilder {
@@ -27,5 +29,15 @@ public class SessionSpecificationBuilder {
 
         return spec;
     }
+
+    public Specification<Session> hasTimeOverlap(String poolName, LocalDateTime startTime, LocalDateTime endTime) {
+        return (root, query, cb) -> cb.and(
+                cb.equal(root.get("pool").get("name"), poolName),
+                cb.lessThan(root.get("startTime"), endTime),
+                cb.greaterThan(root.get("endTime"), startTime)
+        );
+    }
+
+
 }
 

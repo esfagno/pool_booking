@@ -2,6 +2,7 @@ package com.poolapp.pool.security;
 
 import com.poolapp.pool.exception.InvalidTokenException;
 import com.poolapp.pool.model.User;
+import com.poolapp.pool.security.request.RefreshTokenRequest;
 import com.poolapp.pool.util.JwtProperties;
 import com.poolapp.pool.util.exception.ErrorMessages;
 import io.jsonwebtoken.Claims;

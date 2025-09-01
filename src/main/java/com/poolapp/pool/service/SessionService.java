@@ -1,6 +1,7 @@
 package com.poolapp.pool.service;
 
 import com.poolapp.pool.dto.SessionDTO;
+import com.poolapp.pool.dto.requestDTO.RequestSessionDTO;
 import com.poolapp.pool.model.Session;
 import com.poolapp.pool.util.ChangeSessionCapacityRequest;
 
@@ -14,12 +15,16 @@ public interface SessionService {
 
     void changeSessionCapacity(ChangeSessionCapacityRequest request);
 
-    List<SessionDTO> findSessionsByFilter(SessionDTO sessionDTO);
+    List<SessionDTO> findSessionsByFilter(RequestSessionDTO sessionDTO);
 
     boolean validateSessionHasAvailableSpots(SessionDTO sessionDTO);
 
     Optional<Session> getSessionByPoolNameAndStartTime(String poolName, LocalDateTime startTime);
 
+    SessionDTO updateSession(RequestSessionDTO dto);
 
+    void deleteSession(RequestSessionDTO dto);
+
+    List<SessionDTO> createSessions(List<SessionDTO> dtos);
 }
 

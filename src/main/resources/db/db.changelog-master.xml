@@ -16,5 +16,6 @@
     <include file="/db/changeset/009_create_session.sql"/>
     <include file="/db/changeset/010_create_booking.sql"/>
     <include file="/db/changeset/011_create_booking_history.sql"/>
+    <include file="/db/changeset/014_add_us_sub_id_in_booking.sql"/>
 
 </databaseChangeLog>

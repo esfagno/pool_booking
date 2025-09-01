@@ -1,8 +1,9 @@
 package com.poolapp.pool.dto;
 
+import com.poolapp.pool.dto.validation.HasTimeRange;
 import com.poolapp.pool.validation.EndTimeAfterStartTime;
-import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,11 +16,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @EndTimeAfterStartTime
-public class SessionDTO {
+public class SessionDTO implements HasTimeRange {
 
-    @Valid
+    @Size(max = 255)
     @NotNull
-    private PoolDTO poolDTO;
+    private String poolName;
 
     @NotNull
     private LocalDateTime startTime;
